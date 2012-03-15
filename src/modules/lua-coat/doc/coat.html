@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Module Coat</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="Author" content="Fran&ccedil;ois Perrad"/>
+  <meta http-equiv="Language" content="en"/>
+  <meta http-equiv="Description" content="Module Coat"/>
+  <meta http-equiv="Keywords" content="lua, coat, class, after, around, before, bind, can, does, dump, extends, has, instance, isa, overload, override, method, new, singleton, type, with"/>
+</head>
+
+<body>
+
+<div id="container">
+
+<div id="product">
+  <div id="product_logo">
+    <a href="http://www.lua.org">
+      <img alt="Lua" src="http://www.andreas-rozek.de/Lua/Lua-Logo_128x128.png"/>
+    </a>
+  </div>
+  <div id="product_name"><big><strong>lua-Coat</strong></big></div>
+  <div id="product_description">Yet Another Lua Object-Oriented Model</div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+<h1>Coat</h1>
+  <ul>
+    <li><a href="index.html">Home</a>
+      <ul>
+        <li><a href="index.html#overview">Overview</a></li>
+        <li><a href="index.html#status">Status</a></li>
+        <li><a href="index.html#documentation">Documentation</a></li>
+        <li><a href="index.html#download">Download</a></li>
+        <li><a href="index.html#installation">Installation</a></li>
+        <li><a href="index.html#test">Test</a></li>
+        <li><a href="index.html#license">License</a></li>
+      </ul>
+    </li>
+    <li><strong>module <code>Coat</code></strong>
+      <ul>
+        <li><a href="coat.html#reference">Reference</a></li>
+        <li><a href="coat.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="role.html">module <code>Coat.Role</code></a>
+      <ul>
+        <li><a href="role.html#reference">Reference</a></li>
+        <li><a href="role.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="types.html">module <code>Coat.Types</code></a>
+      <ul>
+        <li><a href="types.html#reference">Reference</a></li>
+        <li><a href="types.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_class.html">module <code>C.Meta.Class</code></a>
+      <ul>
+        <li><a href="meta_class.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_role.html">module <code>C.Meta.Role</code></a>
+      <ul>
+        <li><a href="meta_role.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="uml.html">module <code>Coat.UML</code></a>
+      <ul>
+        <li><a href="uml.html#reference">Reference</a></li>
+        <li><a href="uml.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><strong>Manual</strong>
+      <ul>
+        <li><a href="inject.html">Dependency Injection</a></li>
+        <li><a href="memoize.html">Memoization</a></li>
+        <li><a href="mock.html">Mock</a></li>
+      </ul>
+    </li>
+    <li><a href="http://luaforge.net/projects/lua-coat/">Project</a>
+      <ul>
+        <li><a href="http://github.com/fperrad/lua-Coat/">Git</a></li>
+        <li><script type="text/javascript" src="http://www.ohloh.net/p/359564/widgets/project_thin_badge.js"></script></li>
+      </ul>
+    </li>
+  </ul>
+</div> <!-- id="navigation" -->
+
+<div id="content">
+
+<h2><a name="reference"></a>References</h2>
+
+<h3>Global Functions</h3>
+
+<h4><code>abstract( modname )</code></h4>
+
+<p>Create a Coat abstract class as a standard Lua module.</p>
+
+<h4><code>augment( class )</code></h4>
+
+<p>Reopen a Coat class.</p>
+
+<h4><code>class( modname )</code></h4>
+
+<p>Create a Coat class as a standard Lua module.</p>
+
+<h4><code>singleton( modname )</code></h4>
+
+<p>Create a Coat singleton class as a standard Lua module.</p>
+
+<h3>Functions in the <em>built Class</em></h3>
+
+<h4><code>after.name = func</code></h4>
+
+<p>Method modifier.</p>
+
+<h4><code>around.name = func</code></h4>
+
+<p>Method modifier. The new method receives the old one as first parameter.</p>
+
+<h4><code>before.name = func</code></h4>
+
+<p>Method modifier.</p>
+
+<h4><code>bind.name = class</code> or <code>func</code></h4>
+
+<p>Create a binding for dependency injection.</p>
+
+<h4><code>can( obj, methname )</code> or <code>obj:can( methname )</code></h4>
+
+<p>Checks if a object has a method <code>methname</code>.</p>
+
+<h4><code>does( obj, r )</code> or <code>obj:does( r )</code></h4>
+
+<p>Checks if a object consumes <code>r</code> which is a role or rolename.</p>
+
+<h4><code>dump( obj [, label] )</code> or <code>obj:dump( [label] )</code></h4>
+
+<p>Dumps the object. The default value of <code>label</code> is <code>"obj"</code>.</p>
+
+<h4><code>extends( class [, ...] )</code></h4>
+
+<p>Extends the current class with the list of class in parameter.</p>
+
+<h4><code>has.name = { ['+', ] option1 = value1, option2 = value2, ... }</code></h4>
+
+<p>Adds a attribute <code>name</code> in the current class.
+An item <code>'+'</code> allows overriding.</p>
+
+<p>The following options are available :</p>
+<ul>
+  <li><code>builder</code> : function name </li>
+  <li><code>coerce</code> : boolean </li>
+  <li><code>default</code> : value or function </li>
+  <li><code>does</code> : role name</li>
+  <li><code>handles</code> : table or role for method delegation</li>
+  <li><code>inject</code> : boolean for dependency injection</li>
+  <li><code>is</code> : string <code>(ro|rw)</code></li>
+  <li><code>isa</code> : type name</li>
+  <li><code>lazy</code> : boolean </li>
+  <li><code>lazy_build</code> : boolean </li>
+  <li><code>required</code> : boolean </li>
+  <li><code>reset</code> : boolean </li>
+  <li><code>trigger</code> : function </li>
+</ul>
+
+<h4><code>instance( args )</code></h4>
+
+<p>Alias of <code>new</code> for <code>singleton</code> class.</p>
+
+<h4><code>isa( obj, t )</code> or <code>obj:isa( t )</code></h4>
+
+<p>Checks if a object is an instance of <code>t</code> which is a class or classname.</p>
+
+<h4><code>overload.name = func</code></h4>
+
+<p>Registers a metamethod.</p>
+
+<h4><code>override.name = func</code></h4>
+
+<p>Method modifier.</p>
+
+<h4><code>method.name = func</code></h4>
+
+<p>Registers a method.</p>
+
+<h4><code>memoize( methname )</code></h4>
+
+<p>Allows memoization for a method.</p>
+
+<h4><code>mock( obj, methname, func )</code> or <code>obj:mock( methname, func )</code></h4>
+
+<p>Overrides a method of an object.</p>
+
+<h4><code>new( args )</code></h4>
+
+<p>Instanciates a object.</p>
+
+<p>If exist, the user method <code>BUILD</code> is called at the end.</p>
+
+<h4><code>type( obj )</code> or <code>obj:type()</code></h4>
+
+<p>Returns the type of <code>obj</code>.</p>
+
+<h4><code>unmock( obj, methname )</code> or <code>obj:unmock( methname )</code></h4>
+
+<p>Restore the initial method of a mocked object.</p>
+
+<h4><code>with( role [, alias-excludes ] [, role, ... ] )</code></h4>
+
+<p>Composes one or more <code>role</code>,
+a optional table <code>alias-excludes</code>
+allows to prevent name collision.</p>
+
+<h2><a name="examples"></a>Examples</h2>
+
+<h3>Point</h3>
+
+<pre class="example">
+require 'Coat'
+
+class 'Point'
+
+has.x = { is = 'rw', isa = 'number', default = 0 }
+has.y = { is = 'rw', isa = 'number', default = 0 }
+
+function overload:__tostring ()
+    return '(' .. self.x .. ', ' .. self.y .. ')'
+end
+
+function method:draw ()
+    return "drawing " .. self._CLASS .. tostring(self)
+end
+</pre>
+<pre class="example">
+local p1 = Point{ x = 1, y = 2 }
+p1:draw()
+</pre>
+
+<h3>Point3D</h3>
+
+<pre class="example">
+require 'Coat'
+
+class 'Point3D'
+extends 'Point'
+
+has.z = {is = 'rw', isa = 'number', default = 0 }
+
+function overload:__tostring ()
+    return '(' .. self.x .. ', ' .. self.y .. ', ' .. self.z .. ')'
+end
+</pre>
+<pre class="example">
+local p1 = Point3D{ x = 1, y = 2, z = 3 }
+p1:draw()
+</pre>
+
+<h3>Tips</h3>
+
+The following code is usually an error because all instance of Foo share the same table
+as attribute bar.
+
+<pre class="example">
+class 'Foo'
+has.bar = { default = {} }
+</pre>
+
+The correct version is :
+
+<pre class="example">
+has.bar = { default = function () return {} end }
+</pre>
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->
+
+</body>
+</html>

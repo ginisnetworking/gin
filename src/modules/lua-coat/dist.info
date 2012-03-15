@@ -1,0 +1,13 @@
+
+name = "lua-coat"
+version = "0.8.6"
+
+desc = "Yet Another Lua Object-Oriented Model"
+author = "Francois Perrad"
+license = "MIT/X11"
+url = "http://fperrad.github.com/lua-Coat/"
+maintainer = "Francois Perrad"
+
+depends = {
+    "lua ~> 5.1",
+}

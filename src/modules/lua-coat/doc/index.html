@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>lua-Coat - Homepage</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="Author" content="Fran&ccedil;ois Perrad"/>
+  <meta http-equiv="Language" content="en"/>
+  <meta http-equiv="Description" content="Homepage of lua-Coat"/>
+  <meta http-equiv="Keywords" content="lua, coat, moose, mouse, oo, mop"/>
+</head>
+
+<body>
+
+<div id="container">
+
+<div id="product">
+  <div id="product_logo">
+    <a href="http://www.lua.org">
+      <img alt="Lua" src="http://www.andreas-rozek.de/Lua/Lua-Logo_128x128.png"/>
+    </a>
+  </div>
+  <div id="product_name"><big><strong>lua-Coat</strong></big></div>
+  <div id="product_description">Yet Another Lua Object-Oriented Model</div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+<h1>lua-Coat</h1>
+  <ul>
+    <li><strong>Home</strong>
+      <ul>
+        <li><a href="index.html#overview">Overview</a></li>
+        <li><a href="index.html#status">Status</a></li>
+        <li><a href="index.html#documentation">Documentation</a></li>
+        <li><a href="index.html#download">Download</a></li>
+        <li><a href="index.html#installation">Installation</a></li>
+        <li><a href="index.html#test">Test</a></li>
+        <li><a href="index.html#license">License</a></li>
+      </ul>
+    </li>
+    <li><a href="coat.html">module <code>Coat</code></a>
+      <ul>
+        <li><a href="coat.html#reference">Reference</a></li>
+        <li><a href="coat.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="role.html">module <code>Coat.Role</code></a>
+      <ul>
+        <li><a href="role.html#reference">Reference</a></li>
+        <li><a href="role.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="types.html">module <code>Coat.Types</code></a>
+      <ul>
+        <li><a href="types.html#reference">Reference</a></li>
+        <li><a href="types.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_class.html">module <code>C.Meta.Class</code></a>
+      <ul>
+        <li><a href="meta_class.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_role.html">module <code>C.Meta.Role</code></a>
+      <ul>
+        <li><a href="meta_role.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="uml.html">module <code>Coat.UML</code></a>
+      <ul>
+        <li><a href="uml.html#reference">Reference</a></li>
+        <li><a href="uml.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><strong>Manual</strong>
+      <ul>
+        <li><a href="inject.html">Dependency Injection</a></li>
+        <li><a href="memoize.html">Memoization</a></li>
+        <li><a href="mock.html">Mock</a></li>
+      </ul>
+    </li>
+    <li><a href="http://luaforge.net/projects/lua-coat/">Project</a>
+      <ul>
+        <li><a href="http://github.com/fperrad/lua-Coat/">Git</a></li>
+        <li><script type="text/javascript" src="http://www.ohloh.net/p/359564/widgets/project_thin_badge.js"></script></li>
+      </ul>
+    </li>
+  </ul>
+</div> <!-- id="navigation" -->
+
+<div id="content">
+
+<blockquote><p><em>
+    Language shapes the way we think,<br />
+    and determines what we can think about.<br />
+        &mdash; B.L. Whorf
+</em></p></blockquote>
+
+<h2><a name="overview"></a>Overview</h2>
+
+<p>lua-Coat is dual :</p>
+<ul>
+  <li>an Oriented Object Language</li>
+  <li>a Lua library</li>
+</ul>
+
+<p>lua-Coat shares with Lua : the same syntax and the same <em>style</em>.</p>
+
+<blockquote><p><em>
+    Language design is library design<br />
+    and library design is language design.<br />
+        &mdash; old </em>Bell Labs<em> proverb
+</em></p></blockquote>
+
+<h2><a name="lineage"></a>Lineage</h2>
+
+<p>Perl5, like <a href="http://www.lua.org/">Lua</a>,
+has no OO model, just OO mechanism.
+This allows a proliferation (or experimentation) of different model.</p>
+
+<p>Now with <a href="http://www.iinteractive.com/moose/">Moose</a>,
+Perl5 find its <em>ultimate</em> OO model.
+Moose borrows all the best features from Perl6, CLOS (LISP), Smalltalk
+and many other languages.
+Moose is built on top of a metaobject protocol, with full introspection.</p>
+
+<p><a href="http://www.sukria.net/perl/coat/">Coat</a>
+is light-weight Perl5 module which just mimics Moose.
+Now, Coat is <strong>deprecated</strong>, but there are some successors
+<a href="http://search.cpan.org/~gfuji/Mouse/">Mouse</a>,
+<a href="http://search.cpan.org/~mstrout/Moo/">Moo</a>,
+<a href="http://search.cpan.org/~ingy/Mo/">Mo</a>.</p>
+
+<p>Finally, lua-Coat is the Lua port of Coat.</p>
+
+<h2><a name="status"></a>Status</h2>
+
+<p>lua-Coat is in beta stage.</p>
+
+<p>It was developed for Lua 5.1 &amp; 5.2.</p>
+
+<h2><a name="documentation"></a>Documentation</h2>
+
+<p>After these <a href="http://fperrad.github.com/lua-Coat/">HTML files</a>,
+there are many unit tests in test/.</p>
+
+<p>And finally, there are the code in src/
+where you could check the availability of a feature.</p>
+
+<h2><a name="download"></a>Download</h2>
+
+<p>lua-Coat source can be downloaded from
+<a href="http://github.com/fperrad/lua-Coat/downloads/">GitHub</a>.</p>
+
+<h2><a name="installation"></a>Installation</h2>
+
+<p>The easiest way to install lua-Coat is to use LuaRocks:</p>
+
+<pre class="example">
+luarocks install lua-coat
+</pre>
+
+<p>or manually, with:</p>
+
+<pre class="example">
+make install
+</pre>
+
+<h2><a name="test"></a>Test</h2>
+
+<p>The test suite requires the module
+<a href="http://fperrad.github.com/lua-TestMore">lua-TestMore</a>.</p>
+
+<pre class="example">
+make test
+</pre>
+
+<h2><a name="license"></a>Copyright and License</h2>
+
+<p>Copyright &copy; 2009-2012 Fran&ccedil;ois Perrad
+<a href="http://www.ohloh.net/accounts/4780?ref=Rank">
+  <img alt="ohloh profile for Fran&ccedil;ois Perrad"
+       height="24" width="32" style="border-width:0"
+       src="http://www.ohloh.net/accounts/4780/widgets/account_rank.gif"/>
+</a>
+<a href="http://www.linkedin.com/in/fperrad">
+  <img alt="View Fran&ccedil;ois Perrad's profile on LinkedIn"
+       width="80" height="15" style="border-width:0"
+       src="http://www.linkedin.com/img/webpromo/btn_liprofile_blue_80x15.gif"/>
+</a>
+</p>
+
+<p>This library is licensed under the terms of the MIT/X11 license, like Lua itself.</p>
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->
+
+</body>
+</html>

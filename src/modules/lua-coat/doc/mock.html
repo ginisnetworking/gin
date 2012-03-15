@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Test with Mock</title>
+    <link rel="stylesheet" href="http://www.keplerproject.org/doc.css" type="text/css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="Author" content="Fran&ccedil;ois Perrad"/>
+  <meta http-equiv="Language" content="en"/>
+  <meta http-equiv="Description" content="Test with Mock"/>
+  <meta http-equiv="Keywords" content="lua, coat, test, mock"/>
+</head>
+
+<body>
+
+<div id="container">
+
+<div id="product">
+  <div id="product_logo">
+    <a href="http://www.lua.org">
+      <img alt="Lua" src="http://www.andreas-rozek.de/Lua/Lua-Logo_128x128.png"/>
+    </a>
+  </div>
+  <div id="product_name"><big><strong>lua-Coat</strong></big></div>
+  <div id="product_description">Yet Another Lua Object-Oriented Model</div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+<h1>Mock</h1>
+  <ul>
+    <li><a href="index.html">Home</a>
+      <ul>
+        <li><a href="index.html#overview">Overview</a></li>
+        <li><a href="index.html#status">Status</a></li>
+        <li><a href="index.html#documentation">Documentation</a></li>
+        <li><a href="index.html#download">Download</a></li>
+        <li><a href="index.html#installation">Installation</a></li>
+        <li><a href="index.html#test">Test</a></li>
+        <li><a href="index.html#license">License</a></li>
+      </ul>
+    </li>
+    <li><a href="coat.html">module <code>Coat</code></a>
+      <ul>
+        <li><a href="coat.html#reference">Reference</a></li>
+        <li><a href="coat.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="role.html">module <code>Coat.Role</code></a>
+      <ul>
+        <li><a href="role.html#reference">Reference</a></li>
+        <li><a href="role.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="types.html">module <code>Coat.Types</code></a>
+      <ul>
+        <li><a href="types.html#reference">Reference</a></li>
+        <li><a href="types.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_class.html">module <code>C.Meta.Class</code></a>
+      <ul>
+        <li><a href="meta_class.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="meta_role.html">module <code>C.Meta.Role</code></a>
+      <ul>
+        <li><a href="meta_role.html#reference">Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="uml.html">module <code>Coat.UML</code></a>
+      <ul>
+        <li><a href="uml.html#reference">Reference</a></li>
+        <li><a href="uml.html#examples">Examples</a></li>
+      </ul>
+    </li>
+    <li><strong>Manual</strong>
+      <ul>
+        <li><a href="inject.html">Dependency Injection</a></li>
+        <li><a href="memoize.html">Memoization</a></li>
+        <li><strong>Mock</strong></li>
+      </ul>
+    </li>
+    <li><a href="http://luaforge.net/projects/lua-coat/">Project</a>
+      <ul>
+        <li><a href="http://github.com/fperrad/lua-Coat/">Git</a></li>
+        <li><script type="text/javascript" src="http://www.ohloh.net/p/359564/widgets/project_thin_badge.js"></script></li>
+      </ul>
+    </li>
+  </ul>
+</div> <!-- id="navigation" -->
+
+<div id="content">
+
+<h2><a name="object"></a>Mock Object</h2>
+
+<p><code>mock</code> allows to override a method of an object.</p>
+<p><code>unmock</code> allows to restore the initial (ie. class) behavior
+of a mocked object.</p>
+
+<pre class="example">
+require 'Coat'
+
+class 'Rectangle'
+has.x               = { is = 'rw', isa = 'number', required = true }
+has.y               = { is = 'rw', isa = 'number', required = true }
+
+function method:getArea ()
+    return self.x * self.y
+end
+</pre>
+
+<pre class="example">
+require 'Rectangle'
+
+r = Rectangle{ x = 2, y = 4 }
+
+r:mock('getArea', function () return 42 end)
+
+r:unmock 'getArea'
+</pre>
+
+<h2><a name="class"></a>Mock Class</h2>
+
+<p>Create mock class could be simply done with <code>override</code>.
+All instances (already created and future) are altered.
+It is not possible to restore the initial behavior.
+</p>
+
+<p>The 3 following syntax are equivalent :</p>
+
+<pre class="example">
+require 'Rectangle'
+
+function Rectangle.override:getArea ()
+    return 42
+end
+</pre>
+
+<pre class="example">
+require 'Rectangle'
+
+Coat.override(Rectangle, 'getArea', function () return 42 end)
+</pre>
+
+<pre class="example">
+require 'Rectangle'
+
+r = Rectangle{ x = 2, y = 4 }
+
+function r.override:getArea ()
+    return 42
+end
+</pre>
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->
+
+</body>
+</html>

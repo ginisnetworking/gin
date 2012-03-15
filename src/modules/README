@@ -1,0 +1,10 @@
+bencode
+concurrentlua
+lua-coat
+lua-llthreads
+lua-zmq
+luacrypto
+lunit
+lzlib
+nixio
+redis-lua

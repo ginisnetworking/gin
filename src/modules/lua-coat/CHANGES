@@ -1,0 +1,77 @@
+Revision history for lua-Coat
+
+0.8.6  Sat Mar  3 22:30:00 2012
+	+ work with Lua 5.2.0 (__pairs supported)
+	+ add LuaDist support
+
+0.8.5  Fri Nov 26 10:30:00 2010
+	+ fix & improve UML generation
+	+ coat2dot : add option --note
+	+ add augment (reopen class)
+	+ fix compatibility with Lua 5.2.0 alpha
+
+0.8.4  Thu Sep 30 15:30:00 2010
+	+ export _class & argerror (needed by Coat.Persistent)
+	+ site by Github at http://fperrad.github.com/lua-Coat/
+	+ fix UML generation : filter memoize function
+	+ UML generation : sort attributes & methods
+	+ add mock & unmock
+
+0.8.3  Fri May 28 20:30:00 2010
+	+ customize error (now gives a caller position)
+	+ add method dump
+	+ add a patch for Lua 5.2.0 work3 (setfenv)
+
+0.8.2  Sun Mar 28 11:30:00 2010
+	+ add bind & inject for Dependency Injection (request from O. Albiez)
+	+ add memoize
+	+ hierarchy in subtype naming
+	+ make install
+
+0.8.1  Tue Mar  2 10:30:00 2010
+	+ add abstract class
+	+ allows userdata in the Coat type hierarchy (isa & does)
+	+ add Coat.file : the standard userdata 'file' integrates the Coat type hierarchy
+	+ coat2dot : add options --no-attr, --no-meta & --no-meth
+	+ enforce the Liskov Substitution Principle
+	+ add attribute reset (read-only means writable when nil)
+
+0.8.0  Wed Jan 20 21:30:00 2010
+	+ refactor with a more luaesque syntax (access to attribute)
+		NOT COMPATIBLE with previous versions
+		remove attributes : clearer, reader & writer
+	+ fix compatibility with Lua 5.2
+
+0.6.0  Sun Jan 17 16:30:00 2010
+	+ add singleton / instance
+	+ add module Coat.Meta.UML & utility coat2dot (Graphviz)
+	+ modifiers before/after don't handle return values of methods
+		(use modifier around for that)
+	+ option handles allows delegation of role
+	+ add parameterized type constraint
+	+ split Coat.Meta in Coat.Meta.Class & Coat.Meta.Role
+
+0.5.1  Fri Oct 16 10:30:00 2009
+	+ the standard function 'type' is no longer overloaded
+	+ use lua-TestMore (instead of lunity)
+	+ few bugs
+
+0.5.0  Mon Aug 24 15:30:00 2009
+	+ full refactor with a more luaesque syntax
+		NOT COMPATIBLE with previous versions
+
+0.3.0  Mon Aug 17 17:30:00 2009
+	+ handle submodule hierarchy
+
+0.2.1  Sun Aug 16 14:30:00 2009
+	+ remove package.seeall (avoid namespace pollution),
+		thanks to David Manura
+	+ fix type for readonly table and other not Coat table,
+		thanks to David Manura
+
+0.2.0  Fri Aug 14 16:30:00 2009
+	+ add Roles
+	+ add attributes : builder, lazy_build, reader & writer
+
+0.1.0  Thu Aug  6 10:30:00 2009
+	First release (only Perl5 Coat features)

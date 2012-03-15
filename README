@@ -1,0 +1,8 @@
+build - build output
+docs - documentation
+etc - default configurations, environment variables and whatnot
+opt - third party and optional stuff <- consider removing the directory
+pkgz - libraries/modules/etc packages (that we did not get from github)
+src - source code for gin
+var - graphics, html and stuff
+
