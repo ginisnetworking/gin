@@ -33,7 +33,8 @@ DPREFIX= $(DESTDIR)$(PREFIX)
 INSTALL_BIN=   $(DPREFIX)/bin
 INSTALL_LIB=   $(DPREFIX)/lib
 INSTALL_SHARE= $(DPREFIX)/share
-INSTALL_INC=   $(DPREFIX)/include/luajit-$(MAJVER).$(MINVER)
+#INSTALL_INC=   $(DPREFIX)/include/luajit-$(MAJVER).$(MINVER)
+INSTALL_INC=   $(DPREFIX)/include
 
 INSTALL_JITLIB= $(INSTALL_SHARE)/luajit-$(VERSION)/jit
 INSTALL_LMOD= $(INSTALL_SHARE)/lua/$(ABIVER)
@@ -42,7 +43,7 @@ INSTALL_MAN= $(INSTALL_SHARE)/man/man1
 INSTALL_PKGCONFIG= $(INSTALL_LIB)/pkgconfig
 
 INSTALL_TNAME= luajit-$(VERSION)
-INSTALL_TSYMNAME= luajit
+INSTALL_TSYMNAME= lua
 INSTALL_ANAME= libluajit-$(ABIVER).a
 INSTALL_SONAME= libluajit-$(ABIVER).so.$(MAJVER).$(MINVER).$(RELVER)
 INSTALL_SOSHORT= libluajit-$(ABIVER).so
@@ -114,13 +115,14 @@ install: $(INSTALL_DEP)
 	  $(RM) $(FILE_PC).tmp
 	cd src && $(INSTALL_F) $(FILES_INC) $(INSTALL_INC)
 	cd lib && $(INSTALL_F) $(FILES_JITLIB) $(INSTALL_JITLIB)
-	@echo "==== Successfully installed LuaJIT $(VERSION) to $(PREFIX) ===="
-	@echo ""
-	@echo "Note: the beta releases deliberately do NOT install a symlink for luajit"
-	@echo "You can do this now by running this command (with sudo):"
-	@echo ""
-	@echo "  $(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)"
-	@echo ""
+	$(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)
+	#@echo "==== Successfully installed LuaJIT $(VERSION) to $(PREFIX) ===="
+	#@echo ""
+	#@echo "Note: the beta releases deliberately do NOT install a symlink for luajit"
+	#@echo "You can do this now by running this command (with sudo):"
+	#@echo ""
+	#@echo "  $(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)"
+	#@echo ""
 
 ##############################################################################
 

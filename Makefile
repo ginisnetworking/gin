@@ -7,6 +7,7 @@ SRCDIR:=$(HOME)/src
 # Libraries' directories
 LUADIR:=$(SRCDIR)/lua/lua
 LUAJITDIR:=$(SRCDIR)/lua/luajit
+LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
 ZEROMQDIR:=$(SRCDIR)/zeromq
 SQLITEDIR:=$(SRCDIR)/sqlite
 
@@ -14,41 +15,49 @@ SQLITEDIR:=$(SRCDIR)/sqlite
 GINDIR=$(SRCDIR)/gin
 
 # Targets start here.
-all: luajit sqlite zeromq gin
+all: luajit luarocks sqlite zeromq gin
 
-clean: luajitclean sqliteclean zeromqclean ginclean buildclean
+clean: luajitclean luarocksclean sqliteclean zeromqclean ginclean buildclean
 	
 buildclean: 
 	echo $(BUILDDIR)
 	rm -rf $(BUILDDIR)/*
 	
-# Gin components
-
+# Gin components -----------------------------------------------------------------------------------
 gin: 
 	$(MAKE) -C $(GINDIR) macosx && $(MAKE) install
 
 ginclean: 	
 	$(MAKE) -C $(GINDIR) clean
 
-# Compile luajit
-
+# Compile luajit -----------------------------------------------------------------------------------
 luajit:
 	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
 
-# configure and compile zeromq
+# Configure and compile luarocks -------------------------------------------------------------------
+luarocks: luajit luarocksconf
+	$(MAKE) -C $(LUAROCKSDIR) install
+
+luarocksconf:
+	cd $(LUAROCKSDIR) && ./configure --prefix=$(BUILDDIR)
+
+luarocksclean:
+	$(MAKE) -C $(LUAROCKSDIR) clean
+
+# Configure and compile zeromq ---------------------------------------------------------------------
 zeromq: zeromqconf
 	$(MAKE) -C $(ZEROMQDIR) install
 		
 zeromqconf:
-	cd ${ZEROMQDIR} && ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)
+	cd $(ZEROMQDIR) && ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)
 	
 zeromqclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	
-# configure and compile sqlite	
+# Configure and compile sqlite ---------------------------------------------------------------------
 sqlite: sqliteconf
 	$(MAKE) -C $(SQLITEDIR) install
 
@@ -62,6 +71,7 @@ sqliteclean:
 .PHONY: all clean buildclean \
 	gin ginclean \
 	luajit luajitclean \
+	luarocks luarocksconf luarocksclean \
 	sqlite sqliteconf sqliteclean \
 	zeromq zeromqconf zeromqclean
 
