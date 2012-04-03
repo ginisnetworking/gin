@@ -17,7 +17,7 @@ GINDIR=$(SRCDIR)/gin
 # Targets start here.
 all: luajit luarocks sqlite zeromq gin
 
-clean: luajitclean luarocksclean sqliteclean zeromqclean ginclean buildclean
+clean: luajitclean luarocksclean sqliteclean zeromqclean ginclean
 	
 buildclean: 
 	echo $(BUILDDIR)
@@ -56,6 +56,9 @@ zeromqconf:
 	
 zeromqclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
+	
+zeromqrock: luarocks zeromq	
+	$(BUILDDIR)/bin/luarocks make rockspecs/lua-zmq-scm-0.rockspec	
 	
 # Configure and compile sqlite ---------------------------------------------------------------------
 sqlite: sqliteconf
