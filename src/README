@@ -1,6 +1,6 @@
-gin - gin components
+apps - gin apps
+gin - gin base and components
 lua - Lua base (5.2 and 5.1.5) and LuaJit
-modules - Lua modules
 redis - A database in memory
 sqlite - An SQL embedable database library
 zeromq - A lightweight messaging queue library

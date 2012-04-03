@@ -5,7 +5,8 @@ BUILDDIR:=$(HOME)/build
 SRCDIR:=$(HOME)/src
 
 # Libraries' directories
-LUADIR:=$(SRCDIR)/lua
+LUADIR:=$(SRCDIR)/lua/lua
+LUAJITDIR:=$(SRCDIR)/lua/luajit
 ZEROMQDIR:=$(SRCDIR)/zeromq
 SQLITEDIR:=$(SRCDIR)/sqlite
 
@@ -13,9 +14,9 @@ SQLITEDIR:=$(SRCDIR)/sqlite
 GINDIR=$(SRCDIR)/gin
 
 # Targets start here.
-all: sqlite zeromq gin
+all: luajit sqlite zeromq gin
 
-clean: sqliteclean zeromqclean ginclean buildclean
+clean: luajitclean sqliteclean zeromqclean ginclean buildclean
 	
 buildclean: 
 	echo $(BUILDDIR)
@@ -24,34 +25,43 @@ buildclean:
 # Gin components
 
 gin: 
-	$(MAKE) -C ${GINDIR} macosx && $(MAKE) install
+	$(MAKE) -C $(GINDIR) macosx && $(MAKE) install
 
 ginclean: 	
-	$(MAKE) -C ${GINDIR} clean
+	$(MAKE) -C $(GINDIR) clean
+
+# Compile luajit
+
+luajit:
+	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
+
+luajitclean: 
+	$(MAKE) -C $(LUAJITDIR) clean
 
 # configure and compile zeromq
 zeromq: zeromqconf
-	$(MAKE) -C ${ZEROMQDIR} install
+	$(MAKE) -C $(ZEROMQDIR) install
 		
 zeromqconf:
 	cd ${ZEROMQDIR} && ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)
 	
 zeromqclean:
-	$(MAKE) -C ${ZEROMQDIR} clean
+	$(MAKE) -C $(ZEROMQDIR) clean
 	
 # configure and compile sqlite	
 sqlite: sqliteconf
-	$(MAKE) -C ${SQLITEDIR} install
+	$(MAKE) -C $(SQLITEDIR) install
 
 sqliteconf: 
-	cd ${SQLITEDIR} && ./configure --prefix=$(BUILDDIR)
+	cd $(SQLITEDIR) && ./configure --prefix=$(BUILDDIR)
 
 sqliteclean: 
-	$(MAKE) -C ${SQLITEDIR} clean
+	$(MAKE) -C $(SQLITEDIR) clean
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all clean buildclean \
 	gin ginclean \
+	luajit luajitclean \
 	sqlite sqliteconf sqliteclean \
 	zeromq zeromqconf zeromqclean
 
