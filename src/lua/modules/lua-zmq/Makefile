@@ -40,4 +40,4 @@ install: zmq.so
 
 
 clean:
-	rm -f zmq.so zmq.lo
+	rm -f zmq.so zmq.lo zmq.o

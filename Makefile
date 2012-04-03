@@ -8,6 +8,7 @@ SRCDIR:=$(HOME)/src
 LUADIR:=$(SRCDIR)/lua/lua
 LUAJITDIR:=$(SRCDIR)/lua/luajit
 LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
+LUAMODULES:=$(SRCDIR)/lua/modules
 ZEROMQDIR:=$(SRCDIR)/zeromq
 SQLITEDIR:=$(SRCDIR)/sqlite
 
@@ -17,7 +18,7 @@ GINDIR=$(SRCDIR)/gin
 # Targets start here.
 all: luajit luarocks sqlite zeromq gin
 
-clean: luajitclean luarocksclean sqliteclean zeromqclean ginclean
+clean: luajitclean luarocksclean zeromqclean zeromqrockclean sqliteclean  ginclean
 	
 buildclean: 
 	echo $(BUILDDIR)
@@ -58,7 +59,11 @@ zeromqclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	
 zeromqrock: luarocks zeromq	
+	cd $(LUAMODULES)
 	$(BUILDDIR)/bin/luarocks make rockspecs/lua-zmq-scm-0.rockspec	
+	
+zeromqrockclean: 
+	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
 	
 # Configure and compile sqlite ---------------------------------------------------------------------
 sqlite: sqliteconf
