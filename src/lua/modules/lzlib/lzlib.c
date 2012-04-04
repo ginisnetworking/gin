@@ -30,19 +30,11 @@
 
 #include "zlib.h"
 
+
 /*
 ** =========================================================================
 ** compile time options wich determine available functionality
 ** =========================================================================
-*/
-
-/* TODO
-
-- also call flush on table/userdata when flush function is detected
-- remove io_cb check inflate_block if condition
-- only set eos when ZSTREAM_END is reached
-- check for stream errors to close stream when really needed
-
 */
 
 
@@ -53,605 +45,278 @@
 */
 #define ZSTREAMMETA "zlib:zstream"
 
-#define LZ_ANY     -1
-#define LZ_NONE    0
-#define LZ_DEFLATE 1
-#define LZ_INFLATE 2
+#define LZANY     (void*)-1
+#define LZNONE    (void*)0
+#define LZDEFLATE (void*)1
+#define LZINFLATE (void*)2
 
-#if 0
-    #define LZ_BUFFER_SIZE LUAL_BUFFERSIZE
-#else
-    #define LZ_BUFFER_SIZE 8192
-#endif
-
-typedef struct {
-    /* zlib structures */
-    z_stream zstream;
-    /* stream state. LZ_DEFLATE | LZ_INFLATE */
-    int state;
-    int error;
-    int peek;
-    int eos;
-    /* user callback source for reading/writing */
-    int io_cb;
-    /* input buffer */
-    int i_buffer_ref;
-    size_t i_buffer_pos;
-    size_t i_buffer_len;
-    const char *i_buffer;
-    /* output buffer */
-    size_t o_buffer_len;
-    size_t o_buffer_max;
-    char o_buffer[LZ_BUFFER_SIZE];
-} lz_stream;
-
-
-/* forward declarations */
-static int lzstream_docompress(lua_State *L, lz_stream *s, int from, int to, int flush);
-
-
-static lz_stream *lzstream_new(lua_State *L, int src) {
-    lz_stream *s = (lz_stream*)lua_newuserdata(L, sizeof(lz_stream));
+static z_stream *lzstream_new(lua_State *L)
+{
+    z_stream *s = (z_stream*)lua_newuserdata(L, sizeof(z_stream));
 
     luaL_getmetatable(L, ZSTREAMMETA);
     lua_setmetatable(L, -2);        /* set metatable */
 
-    s->state = LZ_NONE;
-    s->error = Z_OK;
-    s->eos = 0;
-    s->io_cb = LUA_REFNIL;
+    s->zalloc = Z_NULL;
+    s->zfree = Z_NULL;
 
-    s->i_buffer = NULL;
-    s->i_buffer_ref = LUA_REFNIL;
-    s->i_buffer_pos = 0;
-    s->i_buffer_len = 0;
+    s->next_out = Z_NULL;
+    s->avail_out = 0;
+    s->next_in = Z_NULL;
+    s->avail_in = 0;
 
-    s->peek = 0;
-    s->o_buffer_len = 0;
-    s->o_buffer_max = sizeof(s->o_buffer) / sizeof(s->o_buffer[0]);
+    s->opaque = LZNONE;
 
-    s->zstream.zalloc = Z_NULL;
-    s->zstream.zfree = Z_NULL;
-
-    /* prepare source */
-    if (lua_isstring(L, src)) {
-        lua_pushvalue(L, src);
-        s->i_buffer_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        s->i_buffer = lua_tolstring(L, src, &s->i_buffer_len);
-    } else {
-        /* table | function | userdata */
-        lua_pushvalue(L, src);
-        s->io_cb = luaL_ref(L, LUA_REGISTRYINDEX);
-    }
     return s;
 }
 
-static void lzstream_cleanup(lua_State *L, lz_stream *s) {
-    if (s && s->state != LZ_NONE) {
-        if (s->state == LZ_INFLATE) {
-            inflateEnd(&s->zstream);
-        }
-        if (s->state == LZ_DEFLATE) {
-            deflateEnd(&s->zstream);
-        }
-
-        luaL_unref(L, LUA_REGISTRYINDEX, s->io_cb);
-        luaL_unref(L, LUA_REGISTRYINDEX, s->i_buffer_ref);
-        s->state = LZ_NONE;
+static void lzstream_cleanup(lua_State *L, z_stream *s)
+{
+    if (s && s->opaque != LZNONE)
+    {
+        if (s->opaque == LZINFLATE)
+            inflateEnd(s);
+        if (s->opaque == LZDEFLATE)
+            deflateEnd(s);
+        s->opaque = LZNONE;
     }
 }
 
 /* ====================================================================== */
 
-static lz_stream *lzstream_get(lua_State *L, int index) {
-    lz_stream *s = (lz_stream*)luaL_checkudata(L, index, ZSTREAMMETA);
+static z_stream *lzstream_get(lua_State *L, int index)
+{
+    z_stream *s = (z_stream*)luaL_checkudata(L, index, ZSTREAMMETA);
     if (s == NULL) luaL_argerror(L, index, "bad zlib stream");
     return s;
 }
 
-static lz_stream *lzstream_check(lua_State *L, int index, int state) {
-    lz_stream *s = lzstream_get(L, index);
-    if ((state != LZ_ANY && s->state != state) || s->state == LZ_NONE) {
+static z_stream *lzstream_check(lua_State *L, int index, void *state)
+{
+    z_stream *s = lzstream_get(L, index);
+    if ((state != LZANY && s->opaque != state) || s->opaque == LZNONE)
         luaL_argerror(L, index, "attempt to use invalid zlib stream");
-    }
     return s;
 }
 
 /* ====================================================================== */
 
-static int lzstream_tostring(lua_State *L) {
-    lz_stream *s = (lz_stream*)luaL_checkudata(L, 1, ZSTREAMMETA);
+static int lzstream_tostring(lua_State *L)
+{
+    char buf[100];
+    z_stream *s = (z_stream*)luaL_checkudata(L, 1, ZSTREAMMETA);
     if (s == NULL) luaL_argerror(L, 1, "bad zlib stream");
 
-    if (s->state == LZ_NONE) {
-        lua_pushstring(L, "zlib stream (closed)");
-    } else if (s->state == LZ_DEFLATE) {
-        lua_pushfstring(L, "zlib deflate stream (%p)", (void*)s);
-    } else if (s->state == LZ_INFLATE) {
-        lua_pushfstring(L, "zlib inflate stream (%p)", (void*)s);
-    } else {
-        lua_pushfstring(L, "%p", (void*)s);
-    }
+    if (s->opaque == LZNONE)
+        strncpy(buf, "zlib stream (closed)", 100);
+    else if (s->opaque == LZDEFLATE)
+        snprintf(buf, 100, "zlib deflate stream (%p)", (void*)s);
+    else if (s->opaque == LZINFLATE)
+        snprintf(buf, 100, "zlib inflate stream (%p)", (void*)s);
+    else
+        snprintf(buf, 100, "%p", (void*)s);
 
+    lua_pushstring(L, buf);
     return 1;
 }
 
 /* ====================================================================== */
 
-static int lzstream_gc(lua_State *L) {
-    lz_stream *s = lzstream_get(L, 1);
+static int lzstream_gc(lua_State *L)
+{
+    z_stream *s = lzstream_get(L, 1);
     lzstream_cleanup(L, s);
     return 0;
 }
 
 /* ====================================================================== */
 
-static int lzstream_close(lua_State *L) {
-    lz_stream *s = lzstream_get(L, 1);
-
-    if (s->state == LZ_DEFLATE) {
-        lua_settop(L, 0);
-        lua_pushliteral(L, "");
-        return lzstream_docompress(L, s, 1, 1, Z_FINISH);
-    }
-
+static int lzstream_close(lua_State *L)
+{
+    z_stream *s = lzstream_check(L, 1, LZANY);
     lzstream_cleanup(L, s);
-    lua_pushboolean(L, 1);
+    return 0;
+}
+
+/* ====================================================================== */
+
+static int lzstream_adler(lua_State *L)
+{
+    z_stream *s = lzstream_check(L, 1, LZANY);
+    lua_pushnumber(L, s->adler);
     return 1;
 }
 
 /* ====================================================================== */
 
-static int lzstream_adler(lua_State *L) {
-    lz_stream *s = lzstream_check(L, 1, LZ_ANY);
-    lua_pushnumber(L, s->zstream.adler);
-    return 1;
-}
+static int lzlib_deflate(lua_State *L)
+{
+    int level = luaL_optint(L, 1, Z_DEFAULT_COMPRESSION);
+    int method = luaL_optint(L, 2, Z_DEFLATED);
+    int windowBits = luaL_optint(L, 3, 15);
+    int memLevel = luaL_optint(L, 4, 8);
+    int strategy = luaL_optint(L, 5, Z_DEFAULT_STRATEGY);
 
-/* ====================================================================== */
+    z_stream *s = lzstream_new(L);
 
-/*
-    zlib.deflate(
-        sink: function | { write: function [, close: function, flush: function] },
-        compression level, [Z_DEFAILT_COMPRESSION]
-        method, [Z_DEFLATED]
-        windowBits, [15]
-        memLevel, [8]
-        strategy, [Z_DEFAULT_STRATEGY]
-    )
-*/
-static int lzlib_deflate(lua_State *L) {
-    int level, method, windowBits, memLevel, strategy;
-    lz_stream *s;
-
-    if (lua_istable(L, 1) || lua_isuserdata(L, 1)) {
-        /* is there a :write function? */
-        lua_getfield(L, 1, "write");
-        if (!lua_isfunction(L, -1)) {
-            luaL_argerror(L, 1, "output parameter does not provide :write function");
-        }
-        lua_pop(L, 1);
-    }
-    else if (!lua_isfunction(L, 1)) {
-        luaL_argerror(L, 1, "output parameter must be a function, table or userdata value");
-    }
-
-    level = luaL_optint(L, 2, Z_DEFAULT_COMPRESSION);
-    method = luaL_optint(L, 3, Z_DEFLATED);
-    windowBits = luaL_optint(L, 4, 15);
-    memLevel = luaL_optint(L, 5, 8);
-    strategy = luaL_optint(L, 6, Z_DEFAULT_STRATEGY);
-
-    s = lzstream_new(L, 1);
-
-    if (deflateInit2(&s->zstream, level, method, windowBits, memLevel, strategy) != Z_OK) {
-        lua_pushliteral(L, "call to deflateInit2 failed");
+    if (deflateInit2(s, level, method, windowBits, memLevel, strategy) != Z_OK)
+    {
+        lua_pushliteral(L, "failed to start decompressing");
         lua_error(L);
     }
-
-    s->state = LZ_DEFLATE;
+    s->opaque = LZDEFLATE;
     return 1;
 }
 
-/*
-    zlib.inflate(
-        source: string | function | { read: function, close: function },
-        windowBits: number, [15]
-    )
-*/
+/* ====================================================================== */
+
 static int lzlib_inflate(lua_State *L)
 {
-    int windowBits;
-    lz_stream *s;
-    int have_peek = 0;
+    int windowBits = luaL_optint(L, 1, 15);
 
-    if (lua_istable(L, 1) || lua_isuserdata(L, 1)) {
-        /* is there a :read function? */
-        lua_getfield(L, 1, "read");
-        if (!lua_isfunction(L, -1)) {
-            luaL_argerror(L, 1, "input parameter does not provide :read function");
-        }
-        lua_pop(L, 1);
-        /* check for peek function */
-        lua_getfield(L, 1, "peek");
-        have_peek = lua_isfunction(L, -1);
-        lua_pop(L, 1);
-    }
-    else if (!lua_isstring(L, 1) && !lua_isfunction(L, 1)) {
-        luaL_argerror(L, 1, "input parameter must be a string, function, table or userdata value");
-    }
+    z_stream *s = lzstream_new(L);
 
-    windowBits = luaL_optint(L, 2, 15);
-
-    s = lzstream_new(L, 1);
-
-    if (windowBits > 0 && windowBits < 16) {
-        windowBits |= 32;
-    }
-
-    if (inflateInit2(&s->zstream, windowBits) != Z_OK) {
-        lua_pushliteral(L, "call to inflateInit2 failed");
+    if (inflateInit2(s, windowBits) != Z_OK)
+    {
+        lua_pushliteral(L, "failed to start compressing");
         lua_error(L);
     }
 
-    s->peek = have_peek;
-    s->state = LZ_INFLATE;
+    s->opaque = LZINFLATE;
     return 1;
 }
 
 /* ====================================================================== */
 
-static int lz_pushresult (lua_State *L, lz_stream *s) {
-    if (s->error == Z_OK) {
-        lua_pushboolean(L, 1);
-        return 1;
-    } else {
-        lua_pushnil(L);
-        lua_pushstring(L, zError(s->error));
-        lua_pushinteger(L, s->error);
-        return 3;
-    }
-}
+static int lzstream_decompress(lua_State *L)
+{
+    int r;
+    luaL_Buffer b;
 
-/*
-    Get block to process:
-        - top of stack gets
-*/
-static const char* lzstream_fetch_block(lua_State *L, lz_stream *s, int hint) {
-    if (s->i_buffer_pos >= s->i_buffer_len) {
-        luaL_unref(L, LUA_REGISTRYINDEX, s->i_buffer_ref);
-        s->i_buffer_ref = LUA_NOREF;
-        s->i_buffer = NULL;
+    z_stream *s = lzstream_check(L, 1, LZINFLATE);
+    s->next_in = (unsigned char*)luaL_checkstring(L, 2);
+    s->avail_in = lua_strlen(L, 2);
 
-        lua_rawgeti(L, LUA_REGISTRYINDEX, s->io_cb);
-        if (!lua_isnil(L, -1)) {
-            if (lua_isfunction(L, -1)) {
-                lua_pushinteger(L, hint);
-                lua_call(L, 1, 1);
-            } else {
-                lua_getfield(L, -1, (s->peek ? "peek" : "read"));
-                lua_insert(L, -2);
-                lua_pushinteger(L, hint);
-                lua_call(L, 2, 1);
-            }
+    luaL_buffinit(L, &b);
 
-            if (lua_isstring(L, -1)) {
-                s->i_buffer_pos = 0;
-                s->i_buffer = lua_tolstring(L, -1, &s->i_buffer_len);
-                if (s->i_buffer_len > 0) {
-                    s->i_buffer_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-                } else {
-                    lua_pop(L, 1);
-                }
-            } else if (lua_isnil(L, -1)) {
-                lua_pop(L, 1);
-            } else {
-                lua_pushliteral(L, "deflate callback must return string or nil");
-                lua_error(L);
-            }
-        } else {
-            lua_pop(L, 1);
-        }
-    }
-
-    return s->i_buffer;
-}
-
-static int lzstream_inflate_block(lua_State *L, lz_stream *s) {
-    if (lzstream_fetch_block(L, s, LZ_BUFFER_SIZE) || !s->eos) {
-        int r;
-
-        if (s->i_buffer_len == s->i_buffer_pos) {
-            s->zstream.next_in = NULL;
-            s->zstream.avail_in = 0;
-        } else {
-            s->zstream.next_in = (unsigned char*)(s->i_buffer + s->i_buffer_pos);
-            s->zstream.avail_in = s->i_buffer_len - s->i_buffer_pos;
-        }
-
-        s->zstream.next_out = (unsigned char*)s->o_buffer + s->o_buffer_len;
-        s->zstream.avail_out = s->o_buffer_max - s->o_buffer_len;
+    do {
+        s->next_out = (unsigned char*)luaL_prepbuffer(&b);
+        s->avail_out = LUAL_BUFFERSIZE;
 
         /* munch some more */
-        r = inflate(&s->zstream, Z_SYNC_FLUSH);
-
-        if (r != Z_OK && r != Z_STREAM_END && r != Z_BUF_ERROR) {
-            lzstream_cleanup(L, s);
-            s->error = r;
-            #if 1
+        r = inflate(s, Z_SYNC_FLUSH);
+        if (r != Z_OK && r != Z_STREAM_END) {
             lua_pushfstring(L, "failed to decompress [%d]", r);
             lua_error(L);
-            #endif
         }
 
-        if (r == Z_STREAM_END) {
-            luaL_unref(L, LUA_REGISTRYINDEX, s->i_buffer_ref);
-            s->i_buffer_ref = LUA_NOREF;
-            s->i_buffer = NULL;
+        /* push gathered data */
+        luaL_addsize(&b, LUAL_BUFFERSIZE - s->avail_out);
 
-            s->eos = 1;
-        }
+        /* until we have free space in the output buffer - meaning we are done */
+    } while (s->avail_in > 0 || s->avail_out == 0);
 
-        /* number of processed bytes */
-        if (s->peek) {
-            size_t processed = s->i_buffer_len - s->i_buffer_pos - s->zstream.avail_in;
-
-            lua_rawgeti(L, LUA_REGISTRYINDEX, s->io_cb);
-            lua_getfield(L, -1, "read");
-            lua_insert(L, -2);
-            lua_pushinteger(L, processed);
-            lua_call(L, 2, 0);
-        }
-
-        s->i_buffer_pos = s->i_buffer_len - s->zstream.avail_in;
-        s->o_buffer_len = s->o_buffer_max - s->zstream.avail_out;
-    }
-
-    return s->o_buffer_len;
-}
-
-/*
-** Remove n bytes from the output buffer.
-*/
-static void lzstream_remove(lz_stream *s, size_t n) {
-    memmove(s->o_buffer, s->o_buffer + n, s->o_buffer_len - n);
-    s->o_buffer_len -= n;
-}
-
-/*
-** Copy at most n bytes to buffer b and remove them from the
-** output stream buffer.
-*/
-static int lzstream_flush_buffer(lua_State *L, lz_stream *s, size_t n, luaL_Buffer *b) {
-    /* check output */
-    if (n > s->o_buffer_len) {
-        n = s->o_buffer_len;
-    }
-
-    if (n > 0) {
-        lua_pushlstring(L, s->o_buffer, n);
-        luaL_addvalue(b);
-
-        lzstream_remove(s, n);
-    }
-
-    return n;
-}
-
-/*
-    z:read(
-        {number | '*l' | '*a'}*
-    )
-*/
-static int lz_test_eof(lua_State *L, lz_stream *s) {
-    lua_pushlstring(L, NULL, 0);
-    if (s->o_buffer_len > 0) {
-        return 1;
-    } else if (s->eos) {
-        return 0;
-    } else {
-        return lzstream_inflate_block(L, s);
-    }
-}
-
-static int lz_read_line(lua_State *L, lz_stream *s) {
-    luaL_Buffer b;
-    size_t l = 0, n;
-
-    luaL_buffinit(L, &b);
-
-    if (s->o_buffer_len > 0 || !s->eos) do {
-        char *p = s->o_buffer;
-        size_t len = s->o_buffer_len;
-
-        /* find newline in output buffer */
-        for (n = 0; n < len; ++n, ++p) {
-            if (*p == '\n' || *p == '\r') {
-                int eat_nl = *p == '\r';
-                luaL_addlstring(&b, s->o_buffer, n);
-                lzstream_remove(s, n+1);
-                l += n;
-
-                if (eat_nl && lzstream_inflate_block(L, s)) {
-                    if (s->o_buffer_len > 0 && *s->o_buffer == '\n') {
-                        lzstream_remove(s, 1);
-                    }
-                }
-
-                luaL_pushresult(&b);
-                return 1;
-            }
-        }
-
-        if (len > 0) {
-            luaL_addlstring(&b, s->o_buffer, len);
-            lzstream_remove(s, len);
-            l += len;
-        }
-    } while (lzstream_inflate_block(L, s));
-
+    /* send gathered data if any */
     luaL_pushresult(&b);
-    return l > 0 || !s->eos || s->o_buffer_len > 0;
-}
 
-
-static int lz_read_chars(lua_State *L, lz_stream *s, size_t n) {
-    size_t len;
-    luaL_Buffer b;
-    luaL_buffinit(L, &b);
-
-    if (s->o_buffer_len > 0 || !s->eos) do {
-        size_t rlen = lzstream_flush_buffer(L, s, n, &b);
-        n -= rlen;
-    } while (n > 0 && lzstream_inflate_block(L, s));
-
-    luaL_pushresult(&b);
-    lua_tolstring(L, -1, &len);
-    return n == 0 || len > 0;
-}
-
-static int lzstream_decompress(lua_State *L) {
-    lz_stream *s = lzstream_check(L, 1, LZ_INFLATE);
-    int nargs = lua_gettop(L) - 1;
-    int success;
-    int n;
-    if (nargs == 0) {  /* no arguments? */
-        success = lz_read_line(L, s);
-        n = 3;  /* to return 1 result */
-    }
-    else {  /* ensure stack space for all results and for auxlib's buffer */
-        luaL_checkstack(L, nargs+LUA_MINSTACK, "too many arguments");
-        success = 1;
-        for (n = 2; nargs-- && success; n++) {
-            if (lua_type(L, n) == LUA_TNUMBER) {
-                size_t l = (size_t)lua_tointeger(L, n);
-                success = (l == 0) ? lz_test_eof(L, s) : lz_read_chars(L, s, l);
-            }
-            else {
-                const char *p = lua_tostring(L, n);
-                luaL_argcheck(L, p && p[0] == '*', n, "invalid option");
-                switch (p[1]) {
-                    case 'l':  /* line */
-                        success = lz_read_line(L, s);
-                        break;
-                    case 'a':  /* file */
-                        lz_read_chars(L, s, ~((size_t)0));  /* read MAX_SIZE_T chars */
-                        success = 1; /* always success */
-                        break;
-                    default:
-                        return luaL_argerror(L, n, "invalid format");
-                }
-            }
-        }
-    }
-    if (s->error != Z_OK) {
-        return lz_pushresult(L, s);
-    }
-    if (!success) {
-        lua_pop(L, 1);  /* remove last result */
-        lua_pushnil(L);  /* push nil instead */
-    }
-    return n - 2;
-}
-
-
-static int lzstream_readline(lua_State *L) {
-    lz_stream *s;
-    int sucess;
-
-    s = lzstream_check(L, lua_upvalueindex(1), LZ_INFLATE);
-    sucess = lz_read_line(L, s);
-
-    if (s->error != Z_OK) {
-        return lz_pushresult(L, s);
-    }
-
-    if (sucess) {
-        return 1;
-    } else {
-        /* EOF */
-        return 0;
-    }
-}
-
-static int lzstream_lines(lua_State *L) {
-    lzstream_check(L, 1, LZ_INFLATE);
-    lua_settop(L, 1);
-    lua_pushcclosure(L, lzstream_readline, 1);
     return 1;
 }
 
 /* ====================================================================== */
 
-static int lzstream_docompress(lua_State *L, lz_stream *s, int from, int to, int flush) {
-    int r, arg;
-    int self = 0;
-    size_t b_size = s->o_buffer_max;
-    unsigned char *b = (unsigned char *)s->o_buffer;
+static int lzstream_compress(lua_State *L)
+{
+    int r;
+    luaL_Buffer b;
 
-    /* number of processed bytes */
-    lua_rawgeti(L, LUA_REGISTRYINDEX, s->io_cb);
-    if (!lua_isfunction(L, -1)) {
-        self = 1;
-        lua_getfield(L, -1, "write");
+    z_stream *s = lzstream_check(L, 1, LZDEFLATE);
+    s->next_in = (unsigned char*)luaL_checkstring(L, 2);
+    s->avail_in = lua_strlen(L, 2);
+
+    luaL_buffinit(L, &b);
+
+    do {
+        s->next_out = (unsigned char*)luaL_prepbuffer(&b);
+        s->avail_out = LUAL_BUFFERSIZE;
+
+        /* bake some more */
+        if ((r = deflate(s, Z_NO_FLUSH)) != Z_OK)
+        {
+            lua_pushfstring(L, "failed to compress [%d]", r);
+            lua_error(L);
+        }
+
+        /* push gathered data */
+        luaL_addsize(&b, LUAL_BUFFERSIZE - s->avail_out);
+
+        /* until we have free space in the output buffer - meaning we are done */
+    } while (s->avail_out == 0);
+
+    /* send gathered data if any */
+    luaL_pushresult(&b);
+
+    return 1;
+}
+
+/* ====================================================================== */
+
+static int lzstream_flush(lua_State *L)
+{
+    z_stream *s = lzstream_check(L, 1, LZANY);
+
+    if (s->opaque == LZINFLATE) {
+        lua_pushliteral(L, "");
+        return 1;
     }
 
-    for (arg = from; arg <= to; arg++) {
-        s->zstream.next_in = (unsigned char*)luaL_checklstring(L, arg, (size_t*)&s->zstream.avail_in);
+    s->next_in = (unsigned char *)"";
+    s->avail_in = 0;
+
+    {
+        int r = 0;
+        luaL_Buffer b;
+        luaL_buffinit(L, &b);
 
         do {
-            s->zstream.next_out = b;
-            s->zstream.avail_out = b_size;
+            s->next_out = (unsigned char *)luaL_prepbuffer(&b);
+            s->avail_out = LUAL_BUFFERSIZE;
 
-            /* bake some more */
-            r = deflate(&s->zstream, flush);
-            if (r != Z_OK && r != Z_STREAM_END && r != Z_BUF_ERROR) {
-                lzstream_cleanup(L, s);
-                lua_pushboolean(L, 0);
-                lua_pushfstring(L, "failed to compress [%d]", r);
-                return 2;
+            r = deflate(s, Z_FINISH);
+
+            if (r != Z_OK && r != Z_STREAM_END) {
+                lua_pushfstring(L, "failed to flush [%d]", r);
+                lua_error(L);
             }
 
-            if (s->zstream.avail_out != b_size) {
-                /* write output */
-                lua_pushvalue(L, -1); /* function */
-                if (self) lua_pushvalue(L, -3); /* self */
-                lua_pushlstring(L, (char*)b, b_size - s->zstream.avail_out); /* data */
-                lua_call(L, (self ? 2 : 1), 0);
-            }
+            /* push gathered data */
+            luaL_addsize(&b, LUAL_BUFFERSIZE - s->avail_out);
+        } while (r != Z_STREAM_END);
 
-            if (r == Z_STREAM_END) {
-                lzstream_cleanup(L, s);
-                break;
-            }
-
-            /* process all input */
-        } while (s->zstream.avail_in > 0 || s->zstream.avail_out == 0);
+        /* send gathered data if any */
+        luaL_pushresult(&b);
     }
-
-    lua_pushboolean(L, 1);
     return 1;
 }
 
-static int lzstream_compress(lua_State *L) {
-    lz_stream *s = lzstream_check(L, 1, LZ_DEFLATE);
-    return lzstream_docompress(L, s, 2, lua_gettop(L), Z_NO_FLUSH);
-}
-
-
 /* ====================================================================== */
 
-static int lzstream_flush(lua_State *L) {
-    static int flush_values[] = { Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH };
-    static const char *const flush_opts[] = { "sync", "full", "finish" };
+static int lzstream_reset(lua_State *L)
+{
+    z_stream *s = lzstream_check(L, 1, LZANY);
 
-    lz_stream *s = lzstream_check(L, 1, LZ_DEFLATE);
-    int flush = luaL_checkoption(L, 2, flush_opts[0], flush_opts);
+    if (s->state == LZDEFLATE)
+        lua_pushnumber(L, deflateReset(s));
+    else if (s->opaque == LZINFLATE)
+        lua_pushnumber(L, inflateReset(s));
+    else
+    {
+        lua_pushliteral(L, "invalid zlib stream state");
+        lua_error(L);
+    }
 
-    lua_settop(L, 0);
-    lua_pushliteral(L, "");
-    return lzstream_docompress(L, s, 1, 1, flush_values[flush]);
+    return 1;
 }
+
 
 /*
 ** =========================================================================
@@ -676,9 +341,9 @@ static int lzlib_adler32(lua_State *L)
     else
     {
         /* update adler32 checksum */
-        size_t len;
         int adler = luaL_checkint(L, 1);
-        const unsigned char* buf = (unsigned char*)luaL_checklstring(L, 2, &len);
+        const unsigned char* buf = (unsigned char*)luaL_checkstring(L, 2);
+        int len = lua_strlen(L, 2);
 
         lua_pushnumber(L, adler32(adler, buf, len));
     }
@@ -696,9 +361,9 @@ static int lzlib_crc32(lua_State *L)
     else
     {
         /* update crc32 checksum */
-        size_t len;
         int crc = luaL_checkint(L, 1);
-        const unsigned char* buf = (unsigned char*)luaL_checklstring(L, 2, &len);
+        const unsigned char* buf = (unsigned char*)luaL_checkstring(L, 2);
+        int len = lua_strlen(L, 2);
 
         lua_pushnumber(L, crc32(crc, buf, len));
     }
@@ -708,9 +373,10 @@ static int lzlib_crc32(lua_State *L)
 /* ====================================================================== */
 
 
-static int lzlib_compress(lua_State *L) {
-    size_t avail_in;
-    const char *next_in = luaL_checklstring(L, 1, &avail_in);
+static int lzlib_compress(lua_State *L)
+{
+    const char *next_in = luaL_checkstring(L, 1);
+    int avail_in = lua_strlen(L, 1);
     int level = luaL_optint(L, 2, Z_DEFAULT_COMPRESSION);
     int method = luaL_optint(L, 3, Z_DEFLATED);
     int windowBits = luaL_optint(L, 4, 15);
@@ -775,8 +441,8 @@ static int lzlib_compress(lua_State *L) {
 
 static int lzlib_decompress(lua_State *L)
 {
-    size_t avail_in;
-    const char *next_in = luaL_checklstring(L, 1, &avail_in);
+    const char *next_in = luaL_checkstring(L, 1);
+    int avail_in = lua_strlen(L, 1);
     int windowBits = luaL_optint(L, 2, 15);
 
     int ret;
@@ -795,15 +461,18 @@ static int lzlib_decompress(lua_State *L)
 
     ret = inflateInit2(&zs, windowBits);
 
-    if (ret != Z_OK) {
-        lua_pushliteral(L, "failed to initialize zstream structures");
-        lua_error(L);
+    if (ret != Z_OK)
+    {
+        lua_pushnil(L);
+        lua_pushnumber(L, ret);
+        return 2;
     }
 
     zs.next_in = (unsigned char*)next_in;
     zs.avail_in = avail_in;
 
-    for (;;) {
+    for(;;)
+    {
         zs.next_out = (unsigned char*)luaL_prepbuffer(&b);
         zs.avail_out = LUAL_BUFFERSIZE;
 
@@ -813,24 +482,25 @@ static int lzlib_decompress(lua_State *L)
         /* push gathered data */
         luaL_addsize(&b, LUAL_BUFFERSIZE - zs.avail_out);
 
+        /* need dictionary? - no dictionary support here, so just quit */
+        if (ret == Z_NEED_DICT)
+            break;
+
         /* done processing? */
         if (ret == Z_STREAM_END)
             break;
 
-        if (ret != Z_OK && ret != Z_BUF_ERROR) {
-            /* cleanup */
-            inflateEnd(&zs);
-
-            lua_pushliteral(L, "failed to process zlib stream");
-            lua_error(L);
-        }
+        /* error condition? */
+        if (ret != Z_BUF_ERROR)
+            break;
     }
 
     /* cleanup */
     inflateEnd(&zs);
 
     luaL_pushresult(&b);
-    return 1;
+    lua_pushnumber(L, ret);
+    return 2;
 }
 
 
@@ -840,13 +510,15 @@ static int lzlib_decompress(lua_State *L)
 ** =========================================================================
 */
 
+
 LUALIB_API int luaopen_zlib(lua_State *L)
 {
-    const luaL_Reg lzstream_meta[] =
+    const luaL_reg zstreamm[] =
     {
-        {"write",           lzstream_compress   },
-        {"read",            lzstream_decompress },
-        {"lines",           lzstream_lines      },
+        {"reset",           lzstream_reset      },
+
+        {"compress",        lzstream_compress   },
+        {"decompress",      lzstream_decompress },
         {"flush",           lzstream_flush      },
         {"close",           lzstream_close      },
 
@@ -857,14 +529,14 @@ LUALIB_API int luaopen_zlib(lua_State *L)
         {NULL, NULL}
     };
 
-    const luaL_Reg zlib[] =
+    const luaL_reg zlib[] =
     {
         {"version",         lzlib_version       },
         {"adler32",         lzlib_adler32       },
         {"crc32",           lzlib_crc32         },
 
-        {"deflate",         lzlib_deflate       },
-        {"inflate",         lzlib_inflate       },
+        {"compressobj",     lzlib_deflate       },
+        {"decompressobj",   lzlib_inflate       },
 
         {"compress",        lzlib_compress      },
         {"decompress",      lzlib_decompress    },
@@ -873,6 +545,14 @@ LUALIB_API int luaopen_zlib(lua_State *L)
     };
 
     /* ====================================================================== */
+
+    /* make sure header and library version are consistent */
+    const char* version = zlibVersion();
+    if (strcmp(version, ZLIB_VERSION))
+    {
+        lua_pushfstring(L, "zlib library version does not match - header: %s, library: %s", ZLIB_VERSION, version);
+        lua_error(L);
+    }
 
     /* create new metatable for zlib compression structures */
     luaL_newmetatable(L, ZSTREAMMETA);
@@ -883,7 +563,7 @@ LUALIB_API int luaopen_zlib(lua_State *L)
     /*
     ** Stack: metatable
     */
-    luaL_register(L, NULL, lzstream_meta);
+    luaL_register(L, NULL, zstreamm);
 
     lua_pop(L, 1);                      /* remove metatable from stack */
 
@@ -893,46 +573,14 @@ LUALIB_API int luaopen_zlib(lua_State *L)
     lua_newtable(L);
 
     lua_pushliteral (L, "_COPYRIGHT");
-    lua_pushliteral (L, "Copyright (C) 2003-2010 Tiago Dionizio");
+    lua_pushliteral (L, "Copyright (C) 2003-2008 Tiago Dionizio");
     lua_settable (L, -3);
     lua_pushliteral (L, "_DESCRIPTION");
     lua_pushliteral (L, "Lua 5 interface to access zlib library functions");
     lua_settable (L, -3);
     lua_pushliteral (L, "_VERSION");
-    lua_pushliteral (L, "lzlib 0.4-work3");
+    lua_pushliteral (L, "lzlib 0.3");
     lua_settable (L, -3);
-
-#define PUSH_LITERAL(name) \
-    lua_pushliteral (L, #name); \
-    lua_pushinteger (L, Z_##name); \
-    lua_settable (L, -3);
-
-#define PUSH_NUMBER(name, value) \
-    lua_pushliteral (L, #name); \
-    lua_pushinteger (L, value); \
-    lua_settable (L, -3);
-
-    PUSH_LITERAL(NO_COMPRESSION)
-    PUSH_LITERAL(BEST_SPEED)
-    PUSH_LITERAL(BEST_COMPRESSION)
-    PUSH_LITERAL(DEFAULT_COMPRESSION)
-
-    PUSH_LITERAL(FILTERED)
-    PUSH_LITERAL(HUFFMAN_ONLY)
-    PUSH_LITERAL(RLE)
-    PUSH_LITERAL(FIXED)
-    PUSH_LITERAL(DEFAULT_STRATEGY)
-
-    PUSH_NUMBER(MINIMUM_MEMLEVEL, 1)
-    PUSH_NUMBER(MAXIMUM_MEMLEVEL, 9)
-    PUSH_NUMBER(DEFAULT_MEMLEVEL, 8)
-
-    PUSH_NUMBER(DEFAULT_WINDOWBITS, 15)
-    PUSH_NUMBER(MINIMUM_WINDOWBITS, 8)
-    PUSH_NUMBER(MAXIMUM_WINDOWBITS, 15)
-
-    PUSH_NUMBER(GZIP_WINDOWBITS, 16)
-    PUSH_NUMBER(RAW_WINDOWBITS, -1)
 
     luaL_register(L, NULL, zlib);
 

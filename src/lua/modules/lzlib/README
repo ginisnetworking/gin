@@ -35,76 +35,88 @@ Loading the library:
     the function "luaopen_zlib(L)". It will create a table with the zlib
     functions and leave it on the stack.
 
+Definitions:
+
+    ds  = deflate stream
+    is  = inflate stream
+    int = number (integer)
+    *   = (any type)
+
+    [...] represent optional parameters that may be omited or nil, in wich case
+    will be replaced by their default values
+
 -- zlib functions --
 
-zlib.version()
-	returns zlib version
+string      zlib.version()
+int         zlib.compile_flags()
+int         zlib.adler32(int adler, string buf)
+int         zlib.crc32(int crc, string buf)
 
-zlib.adler32([int adler32, string buffer])
-	Without any parameters, returns the inicial adler32 value.
+string      zlib.compress(string buf [, int level] [, int method] [, int windowBits] [, int memLevel] [, int strategy])
+string      zlib.uncompress(string buf [, int windowBits])
 
-	Call to update the adler32 value, adler is the current value, buffer is passed
-	to adler32 zlib function and the updated value is returned.
+ds          zlib.deflate_init([int level] [, int method] [, int windowBits] [, int memLevel] [, int strategy])
+is          zlib.inflate_init([int windowBits])
 
-zlib.crc32([int crc32, string buffer])
-	Same as zlib.adler32.
+-- deflate stream methods --
 
-zlib.compress(string buffer [, int level] [, int method] [, int windowBits] [, int memLevel] [, int strategy])
-	Return a string containing the compressed buffer according to the given parameters.
+int         ds:adler()
+int         ds:data_type()
+int         ds:total_in()
+int         ds:total_out()
+int, int    df:process(string [, int flush])
+void        ds:done()
+void        ds:callback(function callback, * userdata)
+int         ds:set_dictionary(string dictionary)
+ds [,int]   ds:clone()
+int         ds:reset()
+int         ds:params(int level, int strategy)
+int         ds:prime(int bits, int value)
 
-zlib.decompress(string buffer [, int windowBits])
-	Return the decompressed stream after processing the given buffer.
+-- inflate stream methods --
+
+int         is:adler()
+int         is:data_type()
+int         is:total_in()
+int         is:total_out()
+int, int    if:process(string [, int flush])
+void        if:done()
+void        is:callback([function callback] [, * userdata])
+void        is:dictionary([function callback] [, * userdata])
+int         is:set_dictionary(string dictionary)
+is [,int]   is:clone()
+int         is:reset()
+int, int    is:sync(string buf)
+
+-- callbacks --
+void        callback(string buf, * userdata)
+void        dictionary(* userdata)
+
+-- general description --
+most functions/methods correspond to the original function in the zlib
+library, the main differences are:
+
+when (de)compressing blocks, the generated output is sent to the callback
+function, this is done to prevent passing too much meaningful result values
+from the process method
+
+deflate/inflate zlib functions are interfaced through the process method
+
+ds:params may invoke the output callback
+
+process method returns the error value and the number of input bytes
+processed
+
+clone method returns a copy of the stream (also copies callbacks) and
+returns a new stream object or nil plus an error code
+
+dictionary callback is not strictly necessary, but may avoid extra process
+calls if used, only needed when compressed stream also used a custom
+dictionary. when using it you must call is:set_dictionary as needed, if not
+you will have to watch the return code for zlib.
+
+is:sync returns an error code and the number of input bytes processed
 
 
-zlib.deflate(
-	sink: function | { write: function [, close: function, flush: function ] },
-	compression level, [Z_DEFAILT_COMPRESSION]
-	method, [Z_DEFLATED]
-	windowBits, [15]
-	memLevel, [8]
-	strategy, [Z_DEFAULT_STRATEGY]
-)
-	Return a deflate stream.
+** for more information please refer to zlib.h **
 
-	stream:read((number | '*l' | '*a')*)
-		Return a value for each given parameter. Returns a line when
-		no format is specified.
-
-	stream:lines()
-		Return iterator that returns a line each time it is called, or nil
-		on end of file.
-
-	stream:close()
-		Close the stream.
-
-zlib.inflate(
-	source: string | function | { read: function, close: function },
-	windowBits: number, [15]
-)
-	Return an inflate stream.
-
-
-deflate and inflate streams can be used almost like a normal file:
-
-	stream:write(...)
-		Write each parameter into the sream.
-
-	stream:read([option [, ...]])
-		Read from the stream, each parameter corresponds to
-                a return value.
-		
-		With no arguments, it reads a line.
-		Parameters are interpreted as follows:
-		  number - reads the specified number of bytes
-		  'a' - reads the remaining bytes
-		  'l' - reads a line
-
-	stream:lines(...)
-		Returns an iterator that returns a new line each time
-                it is called.
-
-	stream:flush(['sync' | 'full' | 'finish'])
-		Flush output for deflate streams.
-
-	stream:close()
-		Close the stream.

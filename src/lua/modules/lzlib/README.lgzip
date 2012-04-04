@@ -27,22 +27,28 @@ To use this library you need zlib library.
 You can get it from http://www.gzip.org/zlib/
 
 
-GZIP file handling on top of the zlib interface.
+This shows up as a 'addon' to the zlib binding interface.
 
-TODO:
-	- detect plain text files
-	- proper testing
-	- improve implementation?
-	- check gzopen flags for consistency (ex: strategy flag)
+This is a simple binding to work with gzip files. It is based on the file
+liolib.c included in the original Lua 5.0 distribuition and contains a similar
+interface, of course, duplicated and unrelated features were removed.
+
+
 
 Loading the library:
 
-    [local] gzip = require 'gzip'
+    If you built the library as a loadable package
+        [local] gzip = require 'gzip'
+
+    If you compiled the package statically into your application, call
+    the function "luaopen_gzip(L)". It will create a table with the zlib
+    functions and leave it on the stack.
+
 
 gzip.open(filename [, mode])
 
     Opens a file name using "gzopen". Behaviour is identical to the description
-    given in the zlib library. If mode is not given a default mode "r" will be
+    given in the zlib library. If mode is not given a default mode "rb" will be
     used. Mode is the same as interpreted by gzopen function, ie, it can
     include special modes such as characters 1 to 9 that will be treated as the
     compression level when opening a file for writing.
@@ -54,7 +60,7 @@ gzip.lines(filename)
 
     Same behaviour as io.lines in the io standard library provided by lua
     with the aditional feature of working with gzip files. If a normal text
-    file is read it will read it normaly.
+    file is read it will read it normaly (normal gzopen behaviour).
 
 gzip.close(file)
 
@@ -91,10 +97,32 @@ file:lines()
 
     Returns an iterator function that, each time it is called, returns a new
     line from the file. Therefore, the construction
-
        for line in file:lines() do ... end
+   will iterate over all lines of the file. (Unlike gzip.lines, this function
+   does not close the file when the loop ends.)
 
-    will iterate over all lines of the file.
+file:seek([whence] [, offset])
+
+    Sets and gets the file position, measured from the beginning of the file,
+    to the position given by offset plus a base specified by the string whence,
+    as follows:
+
+        "set" base is position 0 (beginning of the file);
+        "cur" base is current position;
+
+    In case of success, function seek returns the final file position, measured
+    in bytes from the beginning of the file. If this function fails, it returns
+    nil, plus a string describing the error.
+
+    The default value for whence is "cur", and for offset is 0. Therefore, the
+    call file:seek() returns the current file position, without changing it;
+    the call file:seek("set") sets the position to the beginning of the file
+    (and returns 0); and the call file:seek("end") sets the position to the end
+    of the file, and returns its size.
+
+    This function is subject to limitations imposed by gzseek function from
+    zlib library, such as the inability to use "end" as the base for seeking
+    and the inability to seek backwards when writing.
 
 file:write(value1, ...)
 
