@@ -34,5 +34,4 @@ build = {
             libdirs = { "$(SQLITE_LIBDIR)" }
         }
     },
-	copy_directories = { 'doc', 'examples' }
 }
