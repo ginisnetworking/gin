@@ -16,20 +16,21 @@ SQLITEDIR:=$(SRCDIR)/sqlite
 GINDIR=$(SRCDIR)/gin
 
 # Targets start here.
-all: luajit luarocks sqlite zeromq gin
+all: luajit luarocks \
+	zeromq zeromqrock \
+	sqlite \
+	lzlib \
+	gin
 
-clean: luajitclean luarocksclean zeromqclean zeromqrockclean sqliteclean  ginclean
+clean: luajitclean luarocksclean \
+	zeromqclean zeromqrockclean \
+	sqliteclean \
+	lzlibclean \
+	ginclean
 	
 buildclean: 
-	echo $(BUILDDIR)
+	echo Removing $(BUILDDIR) ...
 	rm -rf $(BUILDDIR)/*
-	
-# Gin components -----------------------------------------------------------------------------------
-gin: 
-	$(MAKE) -C $(GINDIR) macosx && $(MAKE) install
-
-ginclean: 	
-	$(MAKE) -C $(GINDIR) clean
 
 # Compile luajit -----------------------------------------------------------------------------------
 luajit:
@@ -43,7 +44,8 @@ luarocks: luajit luarocksconf
 	$(MAKE) -C $(LUAROCKSDIR) install
 
 luarocksconf:
-	cd $(LUAROCKSDIR) && ./configure --prefix=$(BUILDDIR)
+	cd $(LUAROCKSDIR) && \
+	[ -f Makefile ] || ./configure --prefix=$(BUILDDIR)
 
 luarocksclean:
 	$(MAKE) -C $(LUAROCKSDIR) clean
@@ -53,13 +55,14 @@ zeromq: zeromqconf
 	$(MAKE) -C $(ZEROMQDIR) install
 		
 zeromqconf:
-	cd $(ZEROMQDIR) && ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)
+	cd $(ZEROMQDIR) && \
+	[ -f Makefile ] || ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)
 	
 zeromqclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	
 zeromqrock: luarocks zeromq	
-	cd $(LUAMODULES)
+	cd $(LUAMODULES)/lua-zmq && \
 	$(BUILDDIR)/bin/luarocks make rockspecs/lua-zmq-scm-0.rockspec	
 	
 zeromqrockclean: 
@@ -70,10 +73,29 @@ sqlite: sqliteconf
 	$(MAKE) -C $(SQLITEDIR) install
 
 sqliteconf: 
-	cd $(SQLITEDIR) && ./configure --prefix=$(BUILDDIR)
+	cd $(SQLITEDIR) && \
+	[ -f Makefile ] || ./configure --prefix=$(BUILDDIR)
 
 sqliteclean: 
 	$(MAKE) -C $(SQLITEDIR) clean
+
+# lzlib rock ---------------------------------------------------------------------------------------
+
+lzlib: luarocks	
+	cd $(LUAMODULES)/lzlib && \
+	$(BUILDDIR)/bin/luarocks make rockspecs/lzlib-0.3-3.rockspec 
+	
+lzlibclean: 
+	$(MAKE) -C $(LUAMODULES)/lzlib clean
+	
+# Gin components -----------------------------------------------------------------------------------
+gin: 
+	$(MAKE) -C $(GINDIR) && $(MAKE) install
+
+ginclean: 	
+	$(MAKE) -C $(GINDIR) clean
+
+# List of make targets -----------------------------------------------------------------------------
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all clean buildclean \
