@@ -11,6 +11,8 @@ LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
 LUAMODULES:=$(SRCDIR)/lua/modules
 ZEROMQDIR:=$(SRCDIR)/zeromq
 SQLITEDIR:=$(SRCDIR)/sqlite
+LIBTOMCRYPTDIR=$(SRCDIR)/libtomcrypt
+LIBTOMMATHDIR=$(SRCDIR)/libtommath
 
 # Gin directory
 GINDIR=$(SRCDIR)/gin
@@ -19,16 +21,16 @@ GINDIR=$(SRCDIR)/gin
 all: luajit luarocks \
 	zeromq \
 	sqlite \
-	lzlib \
+	libtom \
 	llthreads \
 	gin
 
 clean: srcclean buildclean
 
 srcclean: luajitclean luarocksclean \
-	zeromqclean  \
+	zeromqclean \
 	sqliteclean \
-	lzlibclean \
+	libtomclean \
 	llthreadsclean \
 	ginclean
 	
@@ -39,6 +41,7 @@ buildclean:
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
 	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
+	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
@@ -97,8 +100,32 @@ sqliterock: luarocks sqlitelib
 	$(BUILDDIR)/bin/luarocks make lsqlite3-0.8-1.rockspec	
 	
 sqliterockclean:
-	rm $(LUAMODULES)/lsqlite3/lsqlite3.o
-	rm $(LUAMODULES)/lsqlite3/lsqlite3.so
+	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.o ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.o; true"
+	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.so ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.so; true"
+
+# --- libtom stuff ---------------------------------------------------------------------------------
+
+libtom: libtommath libtomcrypt lcrypt
+
+libtomclean: libtommathclean libtomcryptclean lcryptclean
+
+libtommath:
+	DESTDIR=$(BUILDDIR) INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` $(MAKE) -C $(LIBTOMMATHDIR) install
+
+libtommathclean:
+	$(MAKE) -C $(LIBTOMMATHDIR) clean
+	
+libtomcrypt: libtommath
+	DESTDIR=$(BUILDDIR) INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` NODOCS=1 $(MAKE) -C $(LIBTOMCRYPTDIR) install
+
+libtomcryptclean:
+	$(MAKE) -C $(LIBTOMCRYPTDIR) clean
+
+lcrypt:
+	TOMCRYPT=../../../libtomcrypt/ LUA=../../luajit/ TARGET=../../../../build/ $(MAKE) -C $(LUAMODULES)/lcrypt install
+
+lcryptclean:
+	$(MAKE) -C $(LUAMODULES)/lcrypt clean
 
 # --- lzlib rock -----------------------------------------------------------------------------------
 
@@ -116,8 +143,8 @@ llthreads: luarocks
 	$(BUILDDIR)/bin/luarocks make rockspecs/lua-llthreads-scm-0.rockspec
 		
 llthreadsclean:	
-	rm $(LUAMODULES)/lua-llthreads/llthreads.so
-	rm $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o
+	sh -c "[ -f $(LUAMODULES)/lua-llthreads/llthreads.so ] && rm $(LUAMODULES)/lua-llthreads/llthreads.so; true"
+	sh -c "[ -f $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o ] && rm $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o; true"
 	
 # --- Gin components -------------------------------------------------------------------------------
 gin: 
