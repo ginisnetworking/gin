@@ -19,7 +19,7 @@ GINDIR=$(SRCDIR)/gin
 
 # Targets start here.
 all: luajit luarocks \
-	zeromq \
+	zeromq nixio \
 	sqlite \
 	libtom \
 	llthreads \
@@ -28,7 +28,7 @@ all: luajit luarocks \
 clean: srcclean buildclean
 
 srcclean: luajitclean luarocksclean \
-	zeromqclean \
+	zeromqclean nixioclean \
 	sqliteclean \
 	libtomclean \
 	llthreadsclean \
@@ -78,6 +78,16 @@ zeromqrock: luarocks zeromqlib
 	
 zeromqrockclean: 
 	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
+
+# --- Configure and nixio sqlite -----------------------------------------------------------------
+	
+nixio: luarocks
+	cd $(LUAMODULES)/nixio && \
+	$(BUILDDIR)/bin/luarocks make nixio-scm-0.rockspec
+
+
+nixioclean:
+	$(MAKE) -C $(LUAMODULES)/nixio clean
 	
 # --- Configure and compile sqlite -----------------------------------------------------------------
 
