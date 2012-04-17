@@ -79,12 +79,11 @@ zeromqrock: luarocks zeromqlib
 zeromqrockclean: 
 	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
 
-# --- Configure and nixio sqlite -----------------------------------------------------------------
+# --- Configure and compile nixio  -----------------------------------------------------------------
 	
 nixio: luarocks
 	cd $(LUAMODULES)/nixio && \
 	$(BUILDDIR)/bin/luarocks make nixio-scm-0.rockspec
-
 
 nixioclean:
 	$(MAKE) -C $(LUAMODULES)/nixio clean
