@@ -23,6 +23,7 @@ all: luajit luarocks \
 	sqlite \
 	libtom \
 	llthreads \
+	luastdlib \
 	gin
 
 clean: srcclean buildclean
@@ -32,6 +33,7 @@ srcclean: luajitclean luarocksclean \
 	sqliteclean \
 	libtomclean \
 	llthreadsclean \
+	luastdlibclean \
 	ginclean
 	
 buildclean: 
@@ -155,6 +157,24 @@ llthreadsclean:
 	sh -c "[ -f $(LUAMODULES)/lua-llthreads/llthreads.so ] && rm $(LUAMODULES)/lua-llthreads/llthreads.so; true"
 	sh -c "[ -f $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o ] && rm $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o; true"
 	
+# --- lua-stdlib rock ------------------------------------------------------------------------------	
+
+luastdlib: luarocks luastdlibconf
+	cd $(LUAMODULES)/lua-stdlib && \
+	$(BUILDDIR)/bin/luarocks make rockspecs/stdlib-26-1.rockspec
+	
+luastdlibconf:
+	cd $(LUAMODULES)/lua-stdlib && \
+	mkdir -p build-aux && \
+	mkdir -p rockspecs && \
+	[ -f Makefile ] || sh -c "aclocal ; automake --add-missing; autoconf" && \
+	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
+	
+luastdlibclean:
+	cd $(LUAMODULES)/lua-stdlib && \
+	rm -r build-aux rockspecs Makefile configure
+	
+	
 # --- Gin components -------------------------------------------------------------------------------
 gin: 
 	$(MAKE) -C $(GINDIR) && $(MAKE) install
@@ -171,6 +191,7 @@ ginclean:
 	luarocks luarocksconf luarocksclean \
 	sqlite sqliteconf sqliteclean \
 	lzlib lzlibclean \
-	llthreads llthreadsclean
+	llthreads llthreadsclean \
+	luastdlib luastdlibconf luastdlibclean
 	
 # (end of Makefile)
