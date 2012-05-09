@@ -69,7 +69,7 @@ zeromqlib: zeromqlibconf
 		
 zeromqlibconf:
 	cd $(ZEROMQDIR) && \
-	[ -f Makefile ] || sh -c "aclocal ; automake --add-missing; autoconf; ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)"
+	[ -f Makefile ] || sh -c "mkdir config; aclocal ; automake --add-missing; autoconf; ./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)"
 	
 zeromqlibclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
