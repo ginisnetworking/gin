@@ -167,7 +167,7 @@ luastdlibconf:
 	cd $(LUAMODULES)/lua-stdlib && \
 	mkdir -p build-aux && \
 	mkdir -p rockspecs && \
-	[ -f Makefile ] || sh -c "aclocal ; automake --add-missing; autoconf" && \
+	[ -f Makefile ] || sh -c "aclocal ; automake --add-missing; autoconf; ./configure" && \
 	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
 	
 luastdlibclean:
