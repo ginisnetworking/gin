@@ -44,6 +44,7 @@ buildclean:
 luajit:
 	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
+	perl bin/createprofile.pl $(BUILDDIR) > $(BUILDDIR)/etc/profile.sh
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
