@@ -4,8 +4,10 @@ HOME:=$(PWD)
 BUILDDIR:=$(HOME)/build
 SRCDIR:=$(HOME)/src
 
+PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
+
 # Libraries' directories
-LUADIR:=$(SRCDIR)/lua/lua
+#LUADIR:=$(SRCDIR)/lua/lua
 LUAJITDIR:=$(SRCDIR)/lua/luajit
 LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
 LUAMODULES:=$(SRCDIR)/lua/modules
@@ -42,9 +44,12 @@ buildclean:
 
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
-	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
+#	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
+	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) install
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
-	perl bin/createprofile.pl $(BUILDDIR)/bin > $(BUILDDIR)/bin/profile.sh
+	sh -c "ln -s $(BUILDDIR)/lib/libluajit-5.1.so.2 $(BUILDDIR)/lib/libluajit.so; true"
+	sh -c "ln -s $(BUILDDIR)/bin/luajit-2.0.0-beta10 $(BUILDDIR)/bin/lua; true"
+	sh -c "ln -s $(BUILDDIR)/lib/pkgconfig/luajit.pc $(BUILDDIR)/lib/pkgconfig/lua5.1.pc; true"
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
@@ -55,10 +60,11 @@ luarocks: luajit luarocksconf
 
 luarocksconf:
 	cd $(LUAROCKSDIR) && \
-	[ -f config.unix ] || ./configure --prefix=$(BUILDDIR)
+	[ -f config.unix ] || ./configure --prefix=$(BUILDDIR) --with-lua=$(BUILDDIR) --with-lua-include=$(BUILDDIR)/include/luajit-2.0
 
 luarocksclean:
 	$(MAKE) -C $(LUAROCKSDIR) clean
+	cd $(LUAROCKSDIR) && rm config.unix
 
 # --- Configure and compile zeromq -----------------------------------------------------------------
 zeromq: zeromqlib zeromqrock
@@ -70,10 +76,11 @@ zeromqlib: zeromqlibconf
 		
 zeromqlibconf:
 	cd $(ZEROMQDIR) && \
-	[ -f Makefile ] || sh -c "./autogen.sh;./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR)"
+	[ -f Makefile ] || sh -c "./autogen.sh;./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR) --includedir=$(BUILDDIR)/include/luajit-2.0"
 	
 zeromqlibclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
+	cd $(ZEROMQDIR) && rm Makefile
 	
 zeromqrock: luarocks zeromqlib
 	cd $(LUAMODULES)/lua-zmq && \
@@ -168,7 +175,7 @@ luastdlibconf:
 	cd $(LUAMODULES)/lua-stdlib && \
 	mkdir -p build-aux && \
 	mkdir -p rockspecs && \
-	[ -f Makefile ] || sh -c "aclocal ; automake --add-missing; autoconf; ./configure" && \
+	sh -c "aclocal ; automake --add-missing; autoconf; ./configure" && \
 	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
 	
 luastdlibclean:

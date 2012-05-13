@@ -1,1 +1,10 @@
 Documentation
+
+
+Manual build:
+make -C `pwd`/src/lua/luajit PREFIX=`pwd`/build install
+luarocks parameters added to configure
+zeromq parameters added to configure
+no makefile testing (will always do configure step for the two above)
+many symlinks
+pkg_config_dir added

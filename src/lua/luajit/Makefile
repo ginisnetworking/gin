@@ -10,13 +10,13 @@
 # For MSVC, please follow the instructions given in src/msvcbuild.bat.
 # For MinGW and Cygwin, cd to src and run make with the Makefile there.
 #
-# Copyright (C) 2005-2011 Mike Pall. See Copyright Notice in luajit.h
+# Copyright (C) 2005-2012 Mike Pall. See Copyright Notice in luajit.h
 ##############################################################################
 
 MAJVER=  2
 MINVER=  0
 RELVER=  0
-PREREL=  -beta9
+PREREL=  -beta10
 VERSION= $(MAJVER).$(MINVER).$(RELVER)$(PREREL)
 ABIVER=  5.1
 NODOTABIVER=  51
@@ -26,25 +26,23 @@ NODOTABIVER=  51
 # Change the installation path as needed. This automatically adjusts
 # the paths in src/luaconf.h, too. Note: PREFIX must be an absolute path!
 #
-# export PREFIX= /usr/local
+export PREFIX= /usr/local
 ##############################################################################
 
 DPREFIX= $(DESTDIR)$(PREFIX)
 INSTALL_BIN=   $(DPREFIX)/bin
 INSTALL_LIB=   $(DPREFIX)/lib
 INSTALL_SHARE= $(DPREFIX)/share
-#INSTALL_INC=   $(DPREFIX)/include/luajit-$(MAJVER).$(MINVER)
-INSTALL_INC=   $(DPREFIX)/include
+INSTALL_INC=   $(DPREFIX)/include/luajit-$(MAJVER).$(MINVER)
 
-#INSTALL_JITLIB= $(INSTALL_SHARE)/luajit-$(VERSION)/jit
-INSTALL_JITLIB= $(INSTALL_SHARE)/jit
+INSTALL_JITLIB= $(INSTALL_SHARE)/luajit-$(VERSION)/jit
 INSTALL_LMOD= $(INSTALL_SHARE)/lua/$(ABIVER)
 INSTALL_CMOD= $(INSTALL_LIB)/lua/$(ABIVER)
 INSTALL_MAN= $(INSTALL_SHARE)/man/man1
 INSTALL_PKGCONFIG= $(INSTALL_LIB)/pkgconfig
 
 INSTALL_TNAME= luajit-$(VERSION)
-INSTALL_TSYMNAME= lua
+INSTALL_TSYMNAME= luajit
 INSTALL_ANAME= libluajit-$(ABIVER).a
 INSTALL_SONAME= libluajit-$(ABIVER).so.$(MAJVER).$(MINVER).$(RELVER)
 INSTALL_SOSHORT= libluajit-$(ABIVER).so
@@ -79,7 +77,7 @@ FILE_MAN= luajit.1
 FILE_PC= luajit.pc
 FILES_INC= lua.h lualib.h lauxlib.h luaconf.h lua.hpp luajit.h
 FILES_JITLIB= bc.lua v.lua dump.lua dis_x86.lua dis_x64.lua dis_arm.lua \
-	      dis_ppc.lua bcsave.lua vmdef.lua
+	      dis_ppc.lua dis_mips.lua dis_mipsel.lua bcsave.lua vmdef.lua
 
 ifeq (,$(findstring Windows,$(OS)))
   ifeq (Darwin,$(shell uname -s))
@@ -116,14 +114,13 @@ install: $(INSTALL_DEP)
 	  $(RM) $(FILE_PC).tmp
 	cd src && $(INSTALL_F) $(FILES_INC) $(INSTALL_INC)
 	cd lib && $(INSTALL_F) $(FILES_JITLIB) $(INSTALL_JITLIB)
-	$(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)
-	#@echo "==== Successfully installed LuaJIT $(VERSION) to $(PREFIX) ===="
-	#@echo ""
-	#@echo "Note: the beta releases deliberately do NOT install a symlink for luajit"
-	#@echo "You can do this now by running this command (with sudo):"
-	#@echo ""
-	#@echo "  $(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)"
-	#@echo ""
+	@echo "==== Successfully installed LuaJIT $(VERSION) to $(PREFIX) ===="
+	@echo ""
+	@echo "Note: the beta releases deliberately do NOT install a symlink for luajit"
+	@echo "You can do this now by running this command (with sudo):"
+	@echo ""
+	@echo "  $(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)"
+	@echo ""
 
 ##############################################################################
 
