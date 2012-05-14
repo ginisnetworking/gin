@@ -3,11 +3,13 @@
 HOME:=$(PWD)
 BUILDDIR:=$(HOME)/build
 SRCDIR:=$(HOME)/src
+PKGDIR:=$(HOME)/pkgs
 
 PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
 
 # Libraries' directories
 #LUADIR:=$(SRCDIR)/lua/lua
+LUAJITPKG=LuaJIT-2.0.0-beta10
 LUAJITDIR:=$(SRCDIR)/lua/luajit
 LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
 LUAMODULES:=$(SRCDIR)/lua/modules
@@ -44,6 +46,8 @@ buildclean:
 
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
+	cd $(SRCDIR)/lua && gunzip -c $(PKGDIR)/$(LUAJITPKG).tar.gz | tar xv -
+	cd $(SRCDIR)/lua && mv $(LUAJITPKG) luajit
 #	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
 	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) install
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
@@ -53,7 +57,7 @@ luajit:
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
-	cd $(LUAJITDIR) && [ -f lib/vmdef.lua ] && rm lib/vmdef.lua || true
+	rm -rf $(LUAJITDIR) || true
 
 # --- Configure and compile luarocks ---------------------------------------------------------------
 luarocks: luajit luarocksconf
