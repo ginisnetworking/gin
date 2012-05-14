@@ -53,6 +53,7 @@ luajit:
 
 luajitclean: 
 	$(MAKE) -C $(LUAJITDIR) clean
+	cd $(LUAJITDIR) && [ -f lib/vmdef.lua ] && rm lib/vmdef.lua || true
 
 # --- Configure and compile luarocks ---------------------------------------------------------------
 luarocks: luajit luarocksconf
@@ -64,7 +65,7 @@ luarocksconf:
 
 luarocksclean:
 	$(MAKE) -C $(LUAROCKSDIR) clean
-	cd $(LUAROCKSDIR) && rm config.unix
+	cd $(LUAROCKSDIR) && [ -f config.unix ] && rm config.unix || true
 
 # --- Configure and compile zeromq -----------------------------------------------------------------
 zeromq: zeromqlib zeromqrock
@@ -80,7 +81,7 @@ zeromqlibconf:
 	
 zeromqlibclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
-	cd $(ZEROMQDIR) && rm Makefile
+	cd $(ZEROMQDIR) && rm Makefile || true
 	
 zeromqrock: luarocks zeromqlib
 	cd $(LUAMODULES)/lua-zmq && \
