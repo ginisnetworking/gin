@@ -32,7 +32,7 @@ my $pkgs   = [
   # lua modules 
   { name    => "lsqlite3", file => "lsqlite3_svn08.zip", dest => "lua/modules/lsqlite3",
     get     => "curl -C - http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8 -o lsqlite3_svn08.zip",
-    extract => "unzip $pkgdir/lsqlite3_svn08.zip"},
+    extract => "unzip $pkgdir/lsqlite3_svn08.zip; mv lsqlite3_svn08/* .; rmdir lsqlite3_svn08"},
   { name    => "luazmq", file => "lua-zmq.tar.gz", dest => "lua/modules/lua-zmq",
     get     => "curl -L -C - https://github.com/iamaleksey/lua-zmq/tarball/master -o lua-zmq.tar.gz",
     extract => "tar zxvf $pkgdir/lua-zmq.tar.gz --strip-components 1"},
