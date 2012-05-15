@@ -60,11 +60,13 @@ my $pkgs   = [
 ];
 
 for my $pkg (@$pkgs) {
+  
   print "Checking package file for $pkg->{name}: ".$pkg->{file}."\n";
   unless (-f $pkgdir."/".$pkg->{file}) {
     print "Getting $pkg->{name}: ".$pkg->{get}."...\n";
     system "cd $pkgdir;".$pkg->{get};
   }
+  
   print "Checking destination dir for $pkg->{name}: ".$pkg->{dest}."\n";
   unless (-d $srcdir."/".$pkg->{dest}) {
     print "Creating destination for $pkg->{name}: ".$pkg->{dest}."...\n";
@@ -72,6 +74,5 @@ for my $pkg (@$pkgs) {
     print "Extracting source for $pkg->{name}...\n";
     system "cd $srcdir/".$pkg->{dest}.";".$pkg->{extract};
   } 
-  
 }
 
