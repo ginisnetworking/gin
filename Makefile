@@ -57,7 +57,7 @@ luajitclean:
 	rm -rf $(LUAJITDIR)
 
 # --- Configure and compile luarocks ---------------------------------------------------------------
-luarocks: luajit luarocksconf
+luarocks: luajit luarocksconf 
 	$(MAKE) -C $(LUAROCKSDIR) install
 
 luarocksconf:
@@ -68,7 +68,7 @@ luarocksclean:
 	rm -rf $(LUAROCKSDIR)
 
 # --- Configure and compile zeromq -----------------------------------------------------------------
-zeromq: zeromqlib zeromqrock
+zeromq: zeromqlib zeromqrock 
 
 zeromqclean: zeromqlibclean zeromqrockclean
 
@@ -136,13 +136,15 @@ libtommathclean:
 	rm -rf $(LIBTOMMATHDIR)
 	
 libtomcrypt: libtommath
-	DESTDIR=$(BUILDDIR) LIBPATH="/lib" INCPATH="/include" INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` NODOCS=1 $(MAKE) -C $(LIBTOMCRYPTDIR) install
+	DESTDIR=$(BUILDDIR) CFLAGS="-g3 -DLTC_NO_ASM -DUSE_LTM -DLTM_DESC -I$(BUILDDIR)/include -L$(BUILDDIR)/lib" \
+	LIBPATH="/lib" INCPATH="/include" INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` \
+	NODOCS=1 $(MAKE) -C $(LIBTOMCRYPTDIR) install
 
 libtomcryptclean:
 	rm -rf $(LIBTOMCRYPTDIR) 
 
 lcrypt:
-	TOMCRYPT=../../../libtomcrypt/ LUA=../../luajit/ TARGET=../../../../build/ $(MAKE) -C $(LUAMODULES)/lcrypt install
+	TOMCRYPT=$(LIBTOMCRYPTDIR) LUA=$(LUAJITDIR) TARGET=$(BUILDDIR) $(MAKE) -C $(LUAMODULES)/lcrypt install
 
 lcryptclean:
 	rm -rf $(LUAMODULES)/lcrypt 
