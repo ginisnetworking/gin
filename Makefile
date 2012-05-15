@@ -4,6 +4,7 @@ HOME:=$(PWD)
 BUILDDIR:=$(HOME)/build
 SRCDIR:=$(HOME)/src
 PKGDIR:=$(HOME)/pkgs
+PTCHDIR:=$(HOME)/patches
 
 PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
 
@@ -22,7 +23,8 @@ LIBTOMMATHDIR=$(SRCDIR)/libtommath
 GINDIR=$(SRCDIR)/gin
 
 # Targets start here.
-all: luajit luarocks \
+all: checksrc \
+    luajit luarocks \
 	zeromq nixio \
 	sqlite \
 	libtom \
@@ -30,25 +32,21 @@ all: luajit luarocks \
 	luastdlib \
 	gin
 
+checksrc:
+	perl bin/pkgmng.pl $(PKGDIR) $(SRCDIR) $(PTCHDIR)
+
 clean: srcclean buildclean
 
-srcclean: luajitclean luarocksclean \
-	zeromqclean nixioclean \
-	sqliteclean \
-	libtomclean \
-	llthreadsclean \
-	luastdlibclean \
-	ginclean
+srcclean: 
+	@echo Removing $(SRCDIR) ...
+	rm -rf $(SRCDIR)/*
 	
 buildclean: 
-	echo Removing $(BUILDDIR) ...
+	@echo Removing $(BUILDDIR) ...
 	rm -rf $(BUILDDIR)/*
 
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
-	[ -d $(SRCDIR)/lua/luajit ] || cd $(SRCDIR)/lua && gunzip -c $(PKGDIR)/$(LUAJITPKG).tar.gz | tar xv 
-	[ -d $(SRCDIR)/lua/luajit ] || cd $(SRCDIR)/lua && mv $(LUAJITPKG) luajit
-#	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
 	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) install
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-5.1.so.2 $(BUILDDIR)/lib/libluajit.so; true"
@@ -56,8 +54,7 @@ luajit:
 	sh -c "ln -s $(BUILDDIR)/lib/pkgconfig/luajit.pc $(BUILDDIR)/lib/pkgconfig/lua5.1.pc; true"
 
 luajitclean: 
-	$(MAKE) -C $(LUAJITDIR) clean
-	rm -rf $(LUAJITDIR) || true
+	rm -rf $(LUAJITDIR)
 
 # --- Configure and compile luarocks ---------------------------------------------------------------
 luarocks: luajit luarocksconf
@@ -68,8 +65,7 @@ luarocksconf:
 	[ -f config.unix ] || ./configure --prefix=$(BUILDDIR) --with-lua=$(BUILDDIR) --with-lua-include=$(BUILDDIR)/include/luajit-2.0
 
 luarocksclean:
-	$(MAKE) -C $(LUAROCKSDIR) clean
-	cd $(LUAROCKSDIR) && [ -f config.unix ] && rm config.unix || true
+	rm -rf $(LUAROCKSDIR)
 
 # --- Configure and compile zeromq -----------------------------------------------------------------
 zeromq: zeromqlib zeromqrock
@@ -137,19 +133,19 @@ libtommath:
 	DESTDIR=$(BUILDDIR) INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` $(MAKE) -C $(LIBTOMMATHDIR) install
 
 libtommathclean:
-	$(MAKE) -C $(LIBTOMMATHDIR) clean
+	rm -rf $(LIBTOMMATHDIR)
 	
 libtomcrypt: libtommath
-	DESTDIR=$(BUILDDIR) INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` NODOCS=1 $(MAKE) -C $(LIBTOMCRYPTDIR) install
+	DESTDIR=$(BUILDDIR) LIBPATH="/lib" INCPATH="/include" INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` NODOCS=1 $(MAKE) -C $(LIBTOMCRYPTDIR) install
 
 libtomcryptclean:
-	$(MAKE) -C $(LIBTOMCRYPTDIR) clean
+	rm -rf $(LIBTOMCRYPTDIR) 
 
 lcrypt:
 	TOMCRYPT=../../../libtomcrypt/ LUA=../../luajit/ TARGET=../../../../build/ $(MAKE) -C $(LUAMODULES)/lcrypt install
 
 lcryptclean:
-	$(MAKE) -C $(LUAMODULES)/lcrypt clean
+	rm -rf $(LUAMODULES)/lcrypt 
 
 # --- lzlib rock -----------------------------------------------------------------------------------
 
@@ -197,7 +193,9 @@ ginclean:
 # --- List of make targets -------------------------------------------------------------------------
 
 # list targets that do not create files (but not all makes understand .PHONY)
-.PHONY: all clean srcclean buildclean \
+.PHONY: all clean \
+    srccheck srcclean \
+    srcclean buildclean \
 	gin ginclean \
 	luajit luajitclean \
 	luarocks luarocksconf luarocksclean \

@@ -2,8 +2,9 @@
 
 use strict;
 
-my $pkgdir = $ARGV[1] || "/Users/pmgc/Workspace/gin/pkgs";
-my $srcdir = $ARGV[2] || "/Users/pmgc/Workspace/gin/src";
+my $pkgdir  = $ARGV[0] || "/Users/pmgc/Workspace/gin/pkgs";
+my $srcdir  = $ARGV[1] || "/Users/pmgc/Workspace/gin/src";
+my $ptchdir = $ARGV[2] || "/Users/pmgc/Workspace/gin/patches";
 
 my $pkgs   = [
 
@@ -59,6 +60,17 @@ my $pkgs   = [
     extract => "tar zxvf $pkgdir/lunit-0.5.tar.gz --strip-components 1"},  
 ];
 
+
+my $patches = [
+   { name => "libtommath", file => "libtommath.patch", dest => "libtommath",
+     apply => "patch -p 1 < $ptchdir/libtommath.patch" },
+   { name => "lcrypt", file => "lcrypt.patch", dest => "lua/modules/lcrypt",
+     apply => "patch -p 1 < $ptchdir/lcrypt.patch" }
+];
+
+
+# Get packages, create dest and extract
+
 for my $pkg (@$pkgs) {
   
   print "Checking package file for $pkg->{name}: ".$pkg->{file}."\n";
@@ -69,10 +81,16 @@ for my $pkg (@$pkgs) {
   
   print "Checking destination dir for $pkg->{name}: ".$pkg->{dest}."\n";
   unless (-d $srcdir."/".$pkg->{dest}) {
+    # Create destination directory
     print "Creating destination for $pkg->{name}: ".$pkg->{dest}."...\n";
     system "cd $srcdir; mkdir -p ".$pkg->{dest};
+    # Extract package
     print "Extracting source for $pkg->{name}...\n";
     system "cd $srcdir/".$pkg->{dest}.";".$pkg->{extract};
+    # Apply patches
+    for my $patch (grep { $_->{name} eq $pkg->{name}} @$patches) {
+      print "Applying patch $patch->{file} to $patch->{name}...";
+      system "cd $srcdir/".$patch->{dest}.";".$patch->{apply};
+    }
   } 
 }
-
