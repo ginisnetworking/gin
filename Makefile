@@ -46,8 +46,8 @@ buildclean:
 
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
-	cd $(SRCDIR)/lua && gunzip -c $(PKGDIR)/$(LUAJITPKG).tar.gz | tar xv 
-	cd $(SRCDIR)/lua && mv $(LUAJITPKG) luajit
+	[ -d $(SRCDIR)/lua/luajit ] || cd $(SRCDIR)/lua && gunzip -c $(PKGDIR)/$(LUAJITPKG).tar.gz | tar xv 
+	[ -d $(SRCDIR)/lua/luajit ] || cd $(SRCDIR)/lua && mv $(LUAJITPKG) luajit
 #	PREFIX=$(BUILDDIR) $(MAKE) -C $(LUAJITDIR) install
 	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) install
 	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
