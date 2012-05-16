@@ -25,10 +25,10 @@ my $pkgs   = [
     extract => "tar zxvf $pkgdir/sqlite-autoconf-3071200.tar.gz --strip-components 1" },
   { name    => "libtommath", file => "ltm-0.42.0.tar.bz2", dest => "libtommath",   
     get     => "curl -C - -O http://libtom.org/files/ltm-0.42.0.tar.bz2",    
-    extract => "bunzip2 -c $pkgdir/ltm-0.42.0.tar.bz2 | tar zxv --strip-components 1"},
+	extract => "bunzip2 -c $pkgdir/ltm-0.42.0.tar.bz2|tar xv --strip-components 1"},
   { name    => "libtomcrypt", file => "crypt-1.17.tar.bz2", dest => "libtomcrypt",  
     get     => "curl -C - -O http://libtom.org/files/crypt-1.17.tar.bz2",    
-    extract => "bunzip2 -c $pkgdir/crypt-1.17.tar.bz2|tar zxv --strip-components 1"},
+    extract => "bunzip2 -c $pkgdir/crypt-1.17.tar.bz2|tar xv --strip-components 1"},
 
   # lua modules 
   { name    => "lsqlite3", file => "lsqlite3_svn08.zip", dest => "lua/modules/lsqlite3",
