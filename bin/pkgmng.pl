@@ -71,6 +71,8 @@ my $patches = [
 
 # Get packages, create dest and extract
 
+system "mkdir -p $srcdir";
+
 for my $pkg (@$pkgs) {
   
   print "Checking package file for $pkg->{name}: ".$pkg->{file}."\n";
