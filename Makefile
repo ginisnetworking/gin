@@ -33,6 +33,7 @@ all: checksrc \
 	gin
 
 checksrc:
+    mkdir -p $(SRCDIR) $(BUILDDIR)
 	perl bin/pkgmng.pl $(PKGDIR) $(SRCDIR) $(PTCHDIR)
 
 clean: srcclean buildclean
