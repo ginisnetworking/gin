@@ -8,8 +8,8 @@ PTCHDIR:=$(HOME)/patches
 
 PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
 
-# Libraries' directories
-#LUADIR:=$(SRCDIR)/lua/lua
+#Libraries' directories
+LUADIR:=$(SRCDIR)/lua/lua
 LUAJITPKG=LuaJIT-2.0.0-beta10
 LUAJITDIR:=$(SRCDIR)/lua/luajit
 LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
@@ -179,7 +179,7 @@ luastdlibconf:
 	cd $(LUAMODULES)/lua-stdlib && \
 	mkdir -p build-aux && \
 	mkdir -p rockspecs && \
-	sh -c "aclocal ; automake --add-missing; autoconf; ./configure" && \
+	sh -c "aclocal -I m4; automake --add-missing; autoconf; ./configure" && \
 	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
 	
 luastdlibclean:
