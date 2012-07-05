@@ -20,7 +20,7 @@ LIBTOMCRYPTDIR=$(SRCDIR)/libtomcrypt
 LIBTOMMATHDIR=$(SRCDIR)/libtommath
 
 # Gin directory
-GINDIR=$(SRCDIR)/gin
+GINDIR=$(HOME)/gin
 
 # Targets start here.
 all: checksrc \
