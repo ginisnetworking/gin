@@ -6,6 +6,7 @@ SRCDIR:=$(HOME)/src
 PKGDIR:=$(HOME)/pkgs
 PTCHDIR:=$(HOME)/patches
 
+PATH:=$(PATH):$(shell pwd)/build/bin
 PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
 
 #Libraries' directories
