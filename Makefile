@@ -188,7 +188,7 @@ luastdlibclean:
 	
 # --- Gin components -------------------------------------------------------------------------------
 gin: 
-	$(MAKE) -C $(GINDIR) && $(MAKE) install
+	$(MAKE) -C $(GINDIR)
 
 ginclean: 	
 	$(MAKE) -C $(GINDIR) clean
