@@ -14,11 +14,18 @@ sqlite>
 
 require('lsqlite3')
 
-local db = sqlite3.open("gin.properties.sqlite3")
+local db = nil
+
+function load(database)
+	database = database or [[gin.properties.sqlite3]]
+	db = sqlite3.open(database)
+	return db
+end
 
 -- TODO: check how to convert key for use in bind_values - bad argument #1 to 'bind_values' (:sqlite3:vm expected, got number)
 function getProperty(key)
 	assert (key) -- key can't be nil
+	db = db or load()
 --	local stmt = db:prepare([[ SELECT content FROM test WHERE id = ?]])
 --	out = stmt.bind_values(key)
 --	stmt:step()
@@ -30,6 +37,9 @@ function getProperty(key)
 end
 
 function setProperty(key, val)
+	assert(key)
+	assert(val)
+	db = db or load()
 	local stmt = db:prepare[[ INSERT INTO properties VALUES (:key, :value) ]]
 	stmt:bind_values(key, val)
 	stmt:step()
