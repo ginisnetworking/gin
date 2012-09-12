@@ -4,9 +4,9 @@
 
 
 function getch_unix() 
-        os.execute("stty cbreak </dev/tty >/dev/tty 2>&1") 
+        -- os.execute("stty cbreak </dev/tty >/dev/tty 2>&1") 
         local key = io.read(1) 
-        os.execute("stty -cbreak </dev/tty >/dev/tty 2>&1"); 
+        -- os.execute("stty -cbreak </dev/tty >/dev/tty 2>&1"); 
         return(key);       
 end 
 
