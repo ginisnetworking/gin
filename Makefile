@@ -187,6 +187,26 @@ luastdlibclean:
 	cd $(LUAMODULES)/lua-stdlib && \
 	rm -r build-aux rockspecs Makefile configure
 	
+# --- miniupnp and libnatpmp -----------------------------------------------------------------------
+miniupnp: libnatpmp miniupnpc
+
+libnatpmp:
+	cd $(SRCDIR)/libnatpmp && \
+	INSTALLPREFIX=$(BUILDDIR) make && \
+	INSTALLPREFIX=$(BUILDDIR) make install
+
+libnatpmpclean:
+	rm $(BUILDDIR)/include/natpmp.h $(BUILDDIR)/lib/libnatpmp.a $(BUILDDIR)/lib/libnatpmp.dylib $(BUILDDIR)/bin/natpmpc $(BUILDDIR)/lib/libnatpmp.1.dylib
+
+miniupnpc:
+	cd $(SRCDIR)/miniupnpc && \
+	INSTALLPREFIX=$(BUILDDIR) make && \
+	INSTALLPREFIX=$(BUILDDIR) make install
+
+miniupnpcclean:
+	rm -rf $(BUILDDIR)/include/miniupnpc $(BUILDDIR)/lib/libminiupnpc.* $(BUILDDIR)/bin/upnpc $(BUILDDIR)/bin/external-ip
+
+miniupnpclean: libnatpmpclean miniupnpcclean
 # --- Gin components -------------------------------------------------------------------------------
 gin: 
 	$(MAKE) -C $(GINDIR)

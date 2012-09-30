@@ -30,6 +30,14 @@ my $pkgs   = [
     get     => "curl -C - -O http://libtom.org/files/crypt-1.17.tar.bz2",    
     extract => "bunzip2 -c $pkgdir/crypt-1.17.tar.bz2|tar xv --strip-components 1"},
 
+  # upnp
+  { name    => "upnpc", file => "miniupnpc-1.7.tar.gz", dest => "miniupnpc",       
+    get     => "curl -C - -O http://miniupnp.free.fr/files/miniupnpc-1.7.tar.gz", 
+    extract => "tar zxvf $pkgdir/miniupnpc-1.7.tar.gz --strip-components 1" },
+  { name    => "libnatpmp", file => "libnatpmp-20120821.tar.gz", dest => "libnatpmp",       
+    get     => "curl -C - -O http://miniupnp.free.fr/files/libnatpmp-20120821.tar.gz", 
+    extract => "tar zxvf $pkgdir/libnatpmp-20120821.tar.gz --strip-components 1" },
+
   # lua modules 
   { name    => "lsqlite3", file => "lsqlite3_svn08.zip", dest => "lua/modules/lsqlite3",
     get     => "curl -C - http://lua.sqlite.org/index.cgi/zip/lsqlite3_svn08.zip?uuid=svn_8 -o lsqlite3_svn08.zip",
