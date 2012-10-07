@@ -28,6 +28,8 @@ all: checksrc \
     luajit luarocks \
 	zeromq nixio \
 	sqlite \
+	libnatpmp \
+	miniupnp \
 	libtom \
 	llthreads \
 	luastdlib \
@@ -188,7 +190,7 @@ luastdlibclean:
 	rm -r build-aux rockspecs Makefile configure
 	
 # --- miniupnp and libnatpmp -----------------------------------------------------------------------
-miniupnp: libnatpmp miniupnpc
+miniupnp: miniupnpc
 
 libnatpmp:
 	cd $(SRCDIR)/libnatpmp && \
