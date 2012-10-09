@@ -26,12 +26,12 @@ GINDIR=$(HOME)/gin
 # Targets start here.
 all: checksrc \
     luajit luarocks \
+	llthreads \
 	zeromq nixio \
 	sqlite \
 	libnatpmp \
 	miniupnp \
 	libtom \
-	llthreads \
 	luastdlib \
 	gin
 
@@ -87,9 +87,10 @@ zeromqlibclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	cd $(ZEROMQDIR) && rm Makefile || true
 	
-zeromqrock: luarocks zeromqlib
+zeromqrock: luarocks llthreads zeromqlib
 	cd $(LUAMODULES)/lua-zmq && \
-	$(BUILDDIR)/bin/luarocks make rockspecs/lua-zmq-scm-0.rockspec	
+	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-scm-1.rockspec && \
+	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-threads-scm-0.rockspec
 	
 zeromqrockclean: 
 	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
