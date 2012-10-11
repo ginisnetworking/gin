@@ -3,6 +3,7 @@
 HOME:=$(PWD)
 BUILDDIR:=$(HOME)/build
 SRCDIR:=$(HOME)/src
+SNBDIR:=$(HOME)/snb
 PKGDIR:=$(HOME)/pkgs
 PTCHDIR:=$(HOME)/patches
 
@@ -210,6 +211,15 @@ miniupnpcclean:
 	rm -rf $(BUILDDIR)/include/miniupnpc $(BUILDDIR)/lib/libminiupnpc.* $(BUILDDIR)/bin/upnpc $(BUILDDIR)/bin/external-ip
 
 miniupnpclean: libnatpmpclean miniupnpcclean
+
+# --- Screws'n'Bolts
+luaportmapper:
+	cd $(SNBDIR) && \
+	gcc -Wall -shared -fPIC -o $(SNBDIR)/luaportmapper.so -I $(BUILDDIR)/include/luajit-2.0 -I $(BUILDDIR)/include -I $(BUILDDIR)/include/miniupnpc -L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
+
+testluaportmapper:
+	cd $(SNBDIR) && \
+	LD_LIBRARY_PATH=$(BUILDDIR)/lib:$(SNBDIR):$(LD_LIBRARY_PATH) $(BUILDDIR)/bin/lua $(SNBDIR)/test.luaportmapper.lua
 # --- Gin components -------------------------------------------------------------------------------
 gin: 
 	$(MAKE) -C $(GINDIR)
