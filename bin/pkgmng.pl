@@ -52,7 +52,7 @@ my $pkgs   = [
     get     => "curl -L -C - https://github.com/Neopallium/lua-llthreads/tarball/master -o llthreads.tar.gz",
     extract => "tar zxvf $pkgdir/llthreads.tar.gz --strip-components 1"},
   { name    => "lua-stdlib", file => "lua-stdlib.tar.gz", dest => "lua/modules/lua-stdlib",
-    get     => "curl -L -C - https://github.com/rrthomas/lua-stdlib/tarball/origin -o lua-stdlib.tar.gz",
+    get     => "curl -L -C - https://github.com/downloads/rrthomas/lua-stdlib/stdlib-26.zip -o lua-stdlib.tar.gz",
     extract => "tar zxvf $pkgdir/lua-stdlib.tar.gz --strip-components 1"},
   { name    => "nixio", file => "nixio.tar.gz", dest => "lua/modules/nixio",
     get     => "curl -L -C - https://github.com/Neopallium/nixio/tarball/master -o nixio.tar.gz",
