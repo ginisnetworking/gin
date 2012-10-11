@@ -44,7 +44,7 @@ clean: srcclean buildclean
 srcclean: 
 	@echo Removing $(SRCDIR) ...
 	rm -rf $(SRCDIR)/*
-	
+
 buildclean: 
 	@echo Removing $(BUILDDIR) ...
 	rm -rf $(BUILDDIR)/*
@@ -78,11 +78,11 @@ zeromqclean: zeromqlibclean zeromqrockclean
 
 zeromqlib: zeromqlibconf
 	$(MAKE) -C $(ZEROMQDIR) install
-		
+
 zeromqlibconf:
 	cd $(ZEROMQDIR) && \
 	[ -f Makefile ] || sh -c "./autogen.sh;./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR) --includedir=$(BUILDDIR)/include/luajit-2.0"
-	
+
 zeromqlibclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	cd $(ZEROMQDIR) && rm Makefile || true
@@ -91,19 +91,19 @@ zeromqrock: luarocks llthreads zeromqlib
 	cd $(LUAMODULES)/lua-zmq && \
 	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-scm-1.rockspec && \
 	 	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-threads-scm-0.rockspec
-	
+
 zeromqrockclean: 
 	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
 
 # --- Configure and compile nixio  -----------------------------------------------------------------
-	
+
 nixio: luarocks
 	cd $(LUAMODULES)/nixio && \
 	$(BUILDDIR)/bin/luarocks make nixio-scm-0.rockspec
 
 nixioclean:
 	$(MAKE) -C $(LUAMODULES)/nixio clean
-	
+
 # --- Configure and compile sqlite -----------------------------------------------------------------
 
 sqlite: sqlitelib sqliterock
@@ -119,11 +119,11 @@ sqlitelibconf:
 
 sqlitelibclean: 
 	$(MAKE) -C $(SQLITEDIR) clean
-	
+
 sqliterock: luarocks sqlitelib
 	cd $(LUAMODULES)/lsqlite3 && \
 	$(BUILDDIR)/bin/luarocks make lsqlite3-0.8-1.rockspec	
-	
+
 sqliterockclean:
 	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.o ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.o; true"
 	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.so ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.so; true"
@@ -139,7 +139,7 @@ libtommath:
 
 libtommathclean:
 	rm -rf $(LIBTOMMATHDIR)
-	
+
 libtomcrypt: libtommath
 	DESTDIR=$(BUILDDIR) CFLAGS="-g3 -DLTC_NO_ASM -DUSE_LTM -DLTM_DESC -I$(BUILDDIR)/include -L$(BUILDDIR)/lib" \
 	LIBPATH="/lib" INCPATH="/include" INSTALL_USER=`id -nu` INSTALL_GROUP=`id -ng` \
@@ -159,37 +159,37 @@ lcryptclean:
 lzlib: luarocks	
 	cd $(LUAMODULES)/lzlib && \
 	$(BUILDDIR)/bin/luarocks make rockspecs/lzlib-0.3-3.rockspec 
-	
+
 lzlibclean: 
 	$(MAKE) -C $(LUAMODULES)/lzlib clean
-	
+
 # --- lua-llthreads rock ---------------------------------------------------------------------------
 
 llthreads: luarocks	
 	cd $(LUAMODULES)/lua-llthreads && \
 	$(BUILDDIR)/bin/luarocks make rockspecs/lua-llthreads-scm-0.rockspec
-		
+
 llthreadsclean:	
 	sh -c "[ -f $(LUAMODULES)/lua-llthreads/llthreads.so ] && rm $(LUAMODULES)/lua-llthreads/llthreads.so; true"
 	sh -c "[ -f $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o ] && rm $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o; true"
-	
+
 # --- lua-stdlib rock ------------------------------------------------------------------------------	
 
 luastdlib: luarocks luastdlibconf
 	cd $(LUAMODULES)/lua-stdlib && \
 	$(BUILDDIR)/bin/luarocks make rockspecs/stdlib-26-1.rockspec
-	
+
 luastdlibconf:
 	cd $(LUAMODULES)/lua-stdlib && \
 	mkdir -p build-aux && \
 	mkdir -p rockspecs && \
 	sh -c "aclocal -I m4; automake --add-missing; autoconf; ./configure" && \
 	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
-	
+
 luastdlibclean:
 	cd $(LUAMODULES)/lua-stdlib && \
 	rm -r build-aux rockspecs Makefile configure
-	
+
 # --- miniupnp and libnatpmp -----------------------------------------------------------------------
 miniupnp: miniupnpc
 
@@ -230,5 +230,6 @@ ginclean:
 	lzlib lzlibclean \
 	llthreads llthreadsclean \
 	luastdlib luastdlibconf luastdlibclean
-	
+
 # (end of Makefile)
+
