@@ -165,6 +165,33 @@ int upnp_map(lua_State *L) {
 	return 0;
 }
 
+int upnp_get_igd(lua_State *L) {
+	static struct UPNPUrls urls;
+	static struct IGDdatas data;
+	struct UPNPDev *devlist;
+	struct UPNPDev *device;
+	int upnperror = 0;
+	int i;
+	char lanaddr[64];
+	char externalIPAddress[40];
+	printf("TB : init_upnp()\n");
+	memset(&urls, 0, sizeof(struct UPNPUrls));
+	memset(&data, 0, sizeof(struct IGDdatas));
+	devlist = upnpDiscover(2000, NULL/*multicast interface*/, NULL/*minissdpd socket path*/, 0/*sameport*/, 0/*ipv6*/, &upnperror);
+	for(device = devlist; device; device = device->pNext) {
+		printf(" desc: %s\n st: %s\n\n", device->descURL, device->st);
+	}
+	i = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+
+	UPNP_GetExternalIPAddress(urls.controlURL, data.first.servicetype, externalIPAddress);
+	printf("External ip address : %s\n", externalIPAddress);
+	printf("Local LAN ip address : %s\n", lanaddr);
+        lua_pushstring(L, externalIPAddress);
+        lua_pushstring(L, lanaddr);
+	freeUPNPDevlist(devlist);
+	return 2;
+}
+
 void natpmp_init(void) {}
 int natpmp_map(lua_State *L) {
 	int r;
@@ -206,6 +233,7 @@ int luaopen_luaportmapper(lua_State *L) {
 	lua_register(L, "natpmp_map", natpmp_map);
 	lua_register(L, "upnp_map", upnp_map);
 	lua_register(L, "upnp_unmap", upnp_unmap);
+	lua_register(L, "upnp_get_igd", upnp_get_igd);
 	return 0;
 }
 
