@@ -34,6 +34,7 @@ all: checksrc \
 	miniupnp \
 	libtom \
 	luastdlib \
+	luaportmapper \
 	gin
 
 checksrc:
