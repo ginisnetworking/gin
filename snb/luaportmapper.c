@@ -116,6 +116,84 @@ void upnp_map_remove(struct UPNPUrls * urls,
 	printf("UPNP_DeletePortMapping() returned : %d\n", r);
 }
 
+int upnp_map_check(lua_State *L) {
+
+	static struct UPNPUrls urls;
+	static struct IGDdatas data;
+	struct UPNPDev *devlist;
+//	struct UPNPDev *device;
+
+	const char* iport = lua_tostring(L, 1);
+	const char* eport = lua_tostring(L, 2);
+
+	int upnperror = 0;
+	int i = 0;
+	int rc = 0;
+	char lanaddr[64];
+	printf("TB : init_upnp()\n");
+	memset(&urls, 0, sizeof(struct UPNPUrls));
+	memset(&data, 0, sizeof(struct IGDdatas));
+	devlist = upnpDiscover(2000, NULL/*multicast interface*/, NULL/*minissdpd socket path*/, 0/*sameport*/, 0/*ipv6*/, &upnperror);
+	i = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+
+
+	int r;
+	char index[6];
+	char intClient[40];
+	char intPort[6];
+	char extPort[6];
+	char protocol[4];
+	char desc[80];
+	char enabled[6];
+	char rHost[64];
+	char duration[16];
+	/*unsigned int num=0;
+	UPNP_GetPortMappingNumberOfEntries(urls->controlURL, data->servicetype, &num);
+	printf("PortMappingNumberOfEntries : %u\n", num);*/
+	printf(" i protocol exPort->inAddr:inPort description remoteHost leaseTime\n");
+	do {
+		snprintf(index, 6, "%d", i);
+		rHost[0] = '\0'; enabled[0] = '\0';
+		duration[0] = '\0'; desc[0] = '\0';
+		extPort[0] = '\0'; intPort[0] = '\0'; intClient[0] = '\0';
+		r = UPNP_GetGenericPortMappingEntry(urls.controlURL,
+		                               data.first.servicetype,
+		                               index,
+		                               extPort, intClient, intPort,
+									   protocol, desc, enabled,
+									   rHost, duration);
+		if(r==0)
+		/*
+			printf("%02d - %s %s->%s:%s\tenabled=%s leaseDuration=%s\n"
+			       "     desc='%s' rHost='%s'\n",
+			       i, protocol, extPort, intClient, intPort,
+				   enabled, duration,
+				   desc, rHost);
+				   */
+			printf("%2d %s %5s->%s:%-5s '%s' '%s' %s\n",
+			       i, protocol, extPort, intClient, intPort,
+			       desc, rHost, duration);
+			if (strcmp(eport, extPort) == 0) {
+				printf("I'm returning more than 1 (found mapping there with the external port %s)\n", extPort);
+				rc++;
+			}
+			if (strcmp(iport, intPort) == 0) {
+				printf("I'm returning more than 1 (found mapping there with the internal port %s)\n", intPort);
+				rc++;
+			}
+		else
+			printf("GetGenericPortMappingEntry() returned %d (%s)\n",
+			       r, strupnperror(r));
+		i++;
+	} while(r==0);
+
+
+	freeUPNPDevlist(devlist);
+	lua_pushnumber(L, rc);
+	return 1;
+
+}
+
 /* TODO: consider either use lua registry to store upnp initialization or make helper functions to deal with upnp initialization and discovery
 */
 int upnp_unmap(lua_State *L) {
@@ -234,6 +312,7 @@ int luaopen_luaportmapper(lua_State *L) {
 	lua_register(L, "upnp_map", upnp_map);
 	lua_register(L, "upnp_unmap", upnp_unmap);
 	lua_register(L, "upnp_get_igd", upnp_get_igd);
+	lua_register(L, "upnp_map_check", upnp_map_check);
 	return 0;
 }
 

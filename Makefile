@@ -34,6 +34,7 @@ all: checksrc \
 	miniupnp \
 	libtom \
 	luastdlib \
+	luaportmapper \
 	gin
 
 checksrc:
@@ -215,7 +216,7 @@ miniupnpclean: libnatpmpclean miniupnpcclean
 # --- Screws'n'Bolts
 luaportmapper:
 	cd $(SNBDIR) && \
-	gcc -Wall -shared -fPIC -o $(SNBDIR)/luaportmapper.so -I $(BUILDDIR)/include/luajit-2.0 -I $(BUILDDIR)/include -I $(BUILDDIR)/include/miniupnpc -L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
+	gcc -Wall -shared -fPIC -o $(BUILDDIR)/lib/lua/5.1/luaportmapper.so -I $(BUILDDIR)/include/luajit-2.0 -I $(BUILDDIR)/include -I $(BUILDDIR)/include/miniupnpc -L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
 
 testluaportmapper:
 	cd $(SNBDIR) && \
