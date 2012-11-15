@@ -57,8 +57,6 @@ function gencoder:encoder(o)
 		end
     end
     self:getencoder(o)(self, o)
-    --local s = self['encoders'][tl](self, o);
-    --if (s:len() > 1300) then return s else return sha2.sha512hex(s) end
 end
 function gencoder:encode(o) 
    self.p, self.s = { }, ""
@@ -70,7 +68,7 @@ end
 
 function gencoder:getdecoder() 
 	local t = self.s:sub(self.i, self.i)
-	print ("getdecoder: " .. self.s:sub(self.i).. " type:" .. t)
+--	print ("getdecoder: " .. self.s:sub(self.i).. " type:" .. t)
 	assert(t, "decode: type not provided") 
 	assert(self.decoders[t], "decode: no decoder for type '" .. t .. "'")
 	self.i = self.i + 1
@@ -79,13 +77,13 @@ end
 function gencoder:getlen()	
     local a, b, len = self.s:find("^([0-9]+):", self.i)
 	assert(len, "decode: length not provided")  
-	print ("getlen: " .. self.s:sub(self.i).. " len:" .. len)
+--	print ("getlen: " .. self.s:sub(self.i).. " len:" .. len)
 	self.i = self.i + (b - a) + 1
     return len
 end
 function gencoder.decoders:b(len) -- boolean
     local val = self.s:sub(self.i, self.i + len - 1)
-    print ("boolean: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
+--  print ("boolean: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
 	assert(val, "decode: boolean value not provided")     
 	self.i = self.i + len
 	if (val == 1) then return true
@@ -93,32 +91,32 @@ function gencoder.decoders:b(len) -- boolean
 end
 function gencoder.decoders:n(len) -- number 
     local val = self.s:sub(self.i, self.i + len - 1)
-    print ("number: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
+--  print ("number: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
 	assert(val, "decode: number value not provided")  
 	self.i = self.i + len
 	return tonumber(val)
 end
 function gencoder.decoders:s(len) -- string
     local val  = self.s:sub(self.i, self.i + len - 1)
-    print ("string: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
+--  print ("string: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
     assert(val, "decode: string value not provided")  
 	self.i = self.i + len
 	return val
 end
 function gencoder.decoders:f(len) -- function
     local val = self.s:sub(self.i, self.i + len - 1)
-    print ("function: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
+--  print ("function: " .. self.s:sub(self.i).. " len:" .. len .. " val: ".. val)
     assert(val, "decode: function value not provided")  
 	self.i = self.i + len
 	return loadstring(val);
 end
 function gencoder.decoders:t()
 	local o = { } 
-	print("table: " .. self.s:sub(self.i).. " next:" .. self.s:sub(self.i, self.i).." stack len: " .. table.maxn(self.p))
+--	print("table: " .. self.s:sub(self.i).. " next:" .. self.s:sub(self.i, self.i).." stack len: " .. table.maxn(self.p))
 	if self.s:sub(self.i, self.i) == "-" then
 		local a, b, pos = self.s:find("^([0-9]+)e", self.i + 1)
 		assert(pos, "decode: table negative index not supplied")
-		print("table: neg index: " .. pos)
+--		print("table: neg index: " .. pos)
 		self.i = self.i + (b - a) + 2
 		assert (self.p[#self.p - pos], "decode: table negative index supplied does not exist")
 		o = self.p[#self.p - pos]
@@ -126,15 +124,15 @@ function gencoder.decoders:t()
 		table.insert(self.p, o)
 		while self.s:sub(self.i, self.i) ~= "e" do 
 			local k = self:decoder()
-			print ("table: k " .. tostring(k))
+--			print ("table: k " .. tostring(k))
 			local v = self:decoder() 
-			print ("table: v " .. tostring(v))
+--			print ("table: v " .. tostring(v))
 			o[k] = v
 		end 
 		table.remove(self.p)
 		self.i = self.i + 1
 	end -- else	
-	print("table: rest --" .. self.s:sub(self.i))
+--	print("table: rest --" .. self.s:sub(self.i))
 	return o
 end
 function gencoder:decoder()
@@ -147,12 +145,10 @@ function gencoder:decode(s)
     return self:decoder()
 end	
 
-
 -- help and test
 
-
 local x = {1 ,2, { "um", 1, "dois", 2 }, true , false }
-function x:fun(k, v) self.k = v end
+function x:fun(k, v) self.k = sha2.sha512hex(v) end
 
 y={}
 y["y"]={ true , false }
@@ -161,10 +157,9 @@ y["y"][4]=10.10e-20
 
 local e = gencoder:new();
 
-print (e:encode(y))
---print (e:encode(x))
-
-local s = e:encode(y)
+print (e:encode(x))
+--print (e:encode(y))
+local s = e:encode(x)
 local z = e:decode(s)
 
 print (e:encode(z))
@@ -180,5 +175,6 @@ function encoder:encode (x,...)
    local enctype = ...
    
 end
-
+    --local s = self['encoders'][tl](self, o);
+    --if (s:len() > 1300) then return s else return sha2.sha512hex(s) end
 ]]
