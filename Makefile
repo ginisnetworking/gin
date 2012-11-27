@@ -12,14 +12,15 @@ PKG_CONFIG_PATH=$(BUILDDIR)/lib/pkgconfig
 
 #Libraries' directories
 LUADIR:=$(SRCDIR)/lua/lua
-LUAJITPKG=LuaJIT-2.0.0-beta10
 LUAJITDIR:=$(SRCDIR)/lua/luajit
 LUAROCKSDIR:=$(SRCDIR)/lua/luarocks
 LUAMODULES:=$(SRCDIR)/lua/modules
 ZEROMQDIR:=$(SRCDIR)/zeromq
 SQLITEDIR:=$(SRCDIR)/sqlite
-LIBTOMCRYPTDIR=$(SRCDIR)/libtomcrypt
-LIBTOMMATHDIR=$(SRCDIR)/libtommath
+LIBEVDIR:=$(SRCDIR)/libev
+# not being used
+# LIBTOMCRYPTDIR=$(SRCDIR)/libtomcrypt
+# LIBTOMMATHDIR=$(SRCDIR)/libtommath
 
 # Gin directory
 GINDIR=$(HOME)/gin
@@ -27,14 +28,11 @@ GINDIR=$(HOME)/gin
 # Targets start here.
 all: checksrc \
     luajit luarocks \
-	llthreads \
-	zeromq nixio \
-	sqlite \
-	libnatpmp \
-	miniupnp \
-	libtom \
-	luastdlib \
-	luaportmapper \
+	zeromq zeromqrock \
+	sqlite sqliterock \
+	libev libevrock \
+	lzlib \
+	libnatpmp miniupnp luaportmapper \
 	gin
 
 checksrc:
@@ -53,11 +51,8 @@ buildclean:
 
 # --- Compile luajit -------------------------------------------------------------------------------
 luajit:
-	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) install
-	sh -c "ln -s $(BUILDDIR)/lib/libluajit-51.2.0.0.dylib $(BUILDDIR)/lib/libluajit.dylib; true"
-	sh -c "ln -s $(BUILDDIR)/lib/libluajit-5.1.so.2 $(BUILDDIR)/lib/libluajit.so; true"
-	sh -c "ln -s $(BUILDDIR)/bin/luajit-2.0.0-beta10 $(BUILDDIR)/bin/lua; true"
-	sh -c "ln -s $(BUILDDIR)/lib/pkgconfig/luajit.pc $(BUILDDIR)/lib/pkgconfig/lua5.1.pc; true"
+	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) INSTALL_INC=$(BUILDDIR)/include install
+	sh -c "ln -s $(BUILDDIR)/bin/luajit-2.0.0 $(BUILDDIR)/bin/lua; true"
 
 luajitclean: 
 	rm -rf $(LUAJITDIR)
@@ -68,34 +63,58 @@ luarocks: luajit luarocksconf
 
 luarocksconf:
 	cd $(LUAROCKSDIR) && \
-	[ -f config.unix ] || ./configure --prefix=$(BUILDDIR) --with-lua=$(BUILDDIR) --with-lua-include=$(BUILDDIR)/include/luajit-2.0
+	[ -f config.unix ] || ./configure --prefix=$(BUILDDIR) --with-lua=$(BUILDDIR) --with-lua-include=$(BUILDDIR)/include/
 
 luarocksclean:
 	rm -rf $(LUAROCKSDIR)
 
 # --- Configure and compile zeromq -----------------------------------------------------------------
-zeromq: zeromqlib zeromqrock 
-
-zeromqclean: zeromqlibclean zeromqrockclean
-
-zeromqlib: zeromqlibconf
+zeromq: zeromqconf
 	$(MAKE) -C $(ZEROMQDIR) install
 
-zeromqlibconf:
+zeromqconf:
 	cd $(ZEROMQDIR) && \
-	[ -f Makefile ] || sh -c "./autogen.sh;./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR) --includedir=$(BUILDDIR)/include/luajit-2.0"
+	[ -f Makefile ] || sh -c "./autogen.sh;./configure --with-pic --with-gcov=no --prefix=$(BUILDDIR) --includedir=$(BUILDDIR)/include/"
 
-zeromqlibclean:
+zeromqclean:
 	$(MAKE) -C $(ZEROMQDIR) clean
 	cd $(ZEROMQDIR) && rm Makefile || true
 	
-zeromqrock: luarocks llthreads zeromqlib
-	cd $(LUAMODULES)/lua-zmq && \
-	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-scm-1.rockspec && \
-	 	$(BUILDDIR)/bin/luarocks make ZEROMQ_INCDIR=$(BUILDDIR)/include/luajit-2.0 ZEROMQ_LIBDIR=$(BUILDDIR)/lib rockspecs/lua-zmq-threads-scm-0.rockspec
+zeromqrock: luarocks zeromq
+	# get from here: https://github.com/Neopallium/lua-zmq
+	luarocks install lua-zmq ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/
+	luarocks install lua-llthreads
+	luarocks install lua-zmq-threads ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/
+	
+# --- Configure and compile sqlite -----------------------------------------------------------------
 
-zeromqrockclean: 
-	$(MAKE) -C $(LUAMODULES)/lua-zmq clean
+sqlite: sqliteconf
+	$(MAKE) -C $(SQLITEDIR) install
+
+sqliteconf: 
+	cd $(SQLITEDIR) && \
+	[ -f Makefile ] || ./configure --prefix=$(BUILDDIR)
+
+sqliteclean: 
+	$(MAKE) -C $(SQLITEDIR) clean
+
+sqliterock: luarocks sqlite
+	luarocks install lsqlite3	
+
+# --- Configure and compile libev  -----------------------------------------------------------------
+
+libev: libevconf
+	$(MAKE) -C $(LIBEVDIR) install
+
+libevconf: 
+	cd $(LIBEVDIR) && \
+	[ -f Makefile ] || ./configure --prefix=$(BUILDDIR)
+	
+libevclean:
+	$(MAKE) -C $(LIBEVDIR) clean
+	
+libevrock: luarocks libev
+  luarocks install lua-ev LIBEV_DIR=$(BUILDDIR) 
 
 # --- Configure and compile nixio  -----------------------------------------------------------------
 
@@ -105,30 +124,6 @@ nixio: luarocks
 
 nixioclean:
 	$(MAKE) -C $(LUAMODULES)/nixio clean
-
-# --- Configure and compile sqlite -----------------------------------------------------------------
-
-sqlite: sqlitelib sqliterock
-
-sqliteclean: sqlitelibclean sqliterockclean
-
-sqlitelib: sqlitelibconf
-	$(MAKE) -C $(SQLITEDIR) install
-
-sqlitelibconf: 
-	cd $(SQLITEDIR) && \
-	[ -f Makefile ] || ./configure --prefix=$(BUILDDIR)
-
-sqlitelibclean: 
-	$(MAKE) -C $(SQLITEDIR) clean
-
-sqliterock: luarocks sqlitelib
-	cd $(LUAMODULES)/lsqlite3 && \
-	$(BUILDDIR)/bin/luarocks make lsqlite3-0.8-1.rockspec	
-
-sqliterockclean:
-	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.o ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.o; true"
-	sh -c "[ -f $(LUAMODULES)/lsqlite3/lsqlite3.so ] && rm $(LUAMODULES)/lsqlite3/lsqlite3.so; true"
 
 # --- libtom stuff ---------------------------------------------------------------------------------
 
@@ -159,22 +154,8 @@ lcryptclean:
 # --- lzlib rock -----------------------------------------------------------------------------------
 
 lzlib: luarocks	
-	cd $(LUAMODULES)/lzlib && \
-	$(BUILDDIR)/bin/luarocks make rockspecs/lzlib-0.3-3.rockspec 
-
-lzlibclean: 
-	$(MAKE) -C $(LUAMODULES)/lzlib clean
-
-# --- lua-llthreads rock ---------------------------------------------------------------------------
-
-llthreads: luarocks	
-	cd $(LUAMODULES)/lua-llthreads && \
-	$(BUILDDIR)/bin/luarocks make rockspecs/lua-llthreads-scm-0.rockspec
-
-llthreadsclean:	
-	sh -c "[ -f $(LUAMODULES)/lua-llthreads/llthreads.so ] && rm $(LUAMODULES)/lua-llthreads/llthreads.so; true"
-	sh -c "[ -f $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o ] && rm $(LUAMODULES)/lua-llthreads/src/pre_generated-llthreads.nobj.o; true"
-
+	luarocks install lzlib
+	
 # --- lua-stdlib rock ------------------------------------------------------------------------------	
 
 luastdlib: luarocks luastdlibconf
@@ -216,7 +197,9 @@ miniupnpclean: libnatpmpclean miniupnpcclean
 # --- Screws'n'Bolts
 luaportmapper:
 	cd $(SNBDIR) && \
-	gcc -Wall -shared -fPIC -o $(BUILDDIR)/lib/lua/5.1/luaportmapper.so -I $(BUILDDIR)/include/luajit-2.0 -I $(BUILDDIR)/include -I $(BUILDDIR)/include/miniupnpc -L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
+	gcc -Wall -shared -fPIC -o $(BUILDDIR)/lib/lua/5.1/luaportmapper.so \
+		-I$(BUILDDIR)/include/luajit-2.0 -I$(BUILDDIR)/include -I$(BUILDDIR)/include/miniupnpc \
+		-L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
 
 testluaportmapper:
 	cd $(SNBDIR) && \
@@ -238,9 +221,7 @@ ginclean:
 	luajit luajitclean \
 	luarocks luarocksconf luarocksclean \
 	sqlite sqliteconf sqliteclean \
-	lzlib lzlibclean \
-	llthreads llthreadsclean \
-	luastdlib luastdlibconf luastdlibclean
+	lzlib lzlibclean 
 
 # (end of Makefile)
 

@@ -1,4 +1,3 @@
-local sha2 = require "sha2"
 
 local gencoder = { encoders = { }, decoders = { } }
 
@@ -146,37 +145,3 @@ function gencoder:decode(s)
 end	
 
 return gencoder;
-
--- help and test
-
-local x = {1 ,2, { "um", 1, "dois", 2 }, true , false }
-function x:fun(k, v) self.k = sha2.sha512hex(v) end
-
-y={}
-y["y"]={ true , false }
-y["y"][3]=y
-y["y"][4]=10.10e-20
-
-local e = gencoder:new();
-
-print (e:encode(x))
---print (e:encode(y))
-local s = e:encode(x)
-local z = e:decode(s)
-
-print (e:encode(z))
-
---print (e:encode(e))
---print (e:encode(gencoder))
-
---[[
-
-local encoder = {}
-
-function encoder:encode (x,...)
-   local enctype = ...
-   
-end
-    --local s = self['encoders'][tl](self, o);
-    --if (s:len() > 1300) then return s else return sha2.sha512hex(s) end
-]]
