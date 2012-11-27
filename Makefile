@@ -31,6 +31,7 @@ all: checksrc \
 	zeromq zeromqrock \
 	sqlite sqliterock \
 	libev libevrock \
+	nixio handlers \
 	lzlib \
 	libnatpmp miniupnp luaportmapper \
 	gin
@@ -53,6 +54,7 @@ buildclean:
 luajit:
 	make -C $(LUAJITDIR) PREFIX=$(BUILDDIR) INSTALL_INC=$(BUILDDIR)/include install
 	sh -c "ln -s $(BUILDDIR)/bin/luajit-2.0.0 $(BUILDDIR)/bin/lua; true"
+	# change flags to include -lpthread, linux bug, see: https://github.com/Neopallium/lua-zmq#readme
 
 luajitclean: 
 	rm -rf $(LUAJITDIR)
@@ -82,10 +84,13 @@ zeromqclean:
 	
 zeromqrock: luarocks zeromq
 	# get from here: https://github.com/Neopallium/lua-zmq
-	luarocks install lua-zmq ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/
-	luarocks install lua-llthreads
-	luarocks install lua-zmq-threads ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/
-	
+	luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
+		"https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-scm-1.rockspec"
+	luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
+		"https://raw.github.com/Neopallium/lua-llthreads/master/rockspecs/lua-llthreads-scm-0.rockspec"
+    luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
+    	"https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-threads-scm-0.rockspec"	
+			
 # --- Configure and compile sqlite -----------------------------------------------------------------
 
 sqlite: sqliteconf
@@ -114,16 +119,79 @@ libevclean:
 	$(MAKE) -C $(LIBEVDIR) clean
 	
 libevrock: luarocks libev
-  luarocks install lua-ev LIBEV_DIR=$(BUILDDIR) 
+	luarocks install LIBEV_DIR=$(BUILDDIR) \
+  		"https://raw.github.com/brimworks/lua-ev/master/rockspec/lua-ev-scm-1.rockspec"
 
 # --- Configure and compile nixio  -----------------------------------------------------------------
 
 nixio: luarocks
-	cd $(LUAMODULES)/nixio && \
-	$(BUILDDIR)/bin/luarocks make nixio-scm-0.rockspec
+	luarocks install "https://raw.github.com/Neopallium/nixio/master/nixio-scm-0.rockspec"
 
-nixioclean:
-	$(MAKE) -C $(LUAMODULES)/nixio clean
+# --- lzlib rock -----------------------------------------------------------------------------------
+
+lzlib: luarocks	
+	luarocks install lzlib
+	
+handlers: luarocks
+	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-scm-0.rockspec"
+	luarocks install "https://github.com/Neopallium/lua-handlers/raw/master/lua-handler-zmq-scm-0.rockspec"	
+	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-nixio-scm-0.rockspec"
+	
+# --- miniupnp and libnatpmp -----------------------------------------------------------------------
+
+miniupnp: miniupnpc
+
+libnatpmp:
+	cd $(SRCDIR)/libnatpmp && \
+	INSTALLPREFIX=$(BUILDDIR) make && \
+	INSTALLPREFIX=$(BUILDDIR) make install
+
+libnatpmpclean:
+	rm $(BUILDDIR)/include/natpmp.h $(BUILDDIR)/lib/libnatpmp.a $(BUILDDIR)/lib/libnatpmp.dylib $(BUILDDIR)/bin/natpmpc $(BUILDDIR)/lib/libnatpmp.1.dylib
+
+miniupnpc:
+	cd $(SRCDIR)/miniupnpc && \
+	INSTALLPREFIX=$(BUILDDIR) make && \
+	INSTALLPREFIX=$(BUILDDIR) make install
+
+miniupnpcclean:
+	rm -rf $(BUILDDIR)/include/miniupnpc $(BUILDDIR)/lib/libminiupnpc.* $(BUILDDIR)/bin/upnpc $(BUILDDIR)/bin/external-ip
+
+miniupnpclean: libnatpmpclean miniupnpcclean
+
+# --- Screws'n'Bolts -------------------------------------------------------------------------------
+
+luaportmapper:
+	cd $(SNBDIR) && \
+	gcc -Wall -shared -fPIC -o $(BUILDDIR)/lib/lua/5.1/luaportmapper.so \
+		-I$(BUILDDIR)/include/luajit-2.0 -I$(BUILDDIR)/include -I$(BUILDDIR)/include/miniupnpc \
+		-L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
+
+testluaportmapper:
+	cd $(SNBDIR) && \
+	LD_LIBRARY_PATH=$(BUILDDIR)/lib:$(SNBDIR):$(LD_LIBRARY_PATH) $(BUILDDIR)/bin/lua $(SNBDIR)/test.luaportmapper.lua
+
+# --- Gin components -------------------------------------------------------------------------------
+
+gin: 
+	$(MAKE) -C $(GINDIR)
+
+ginclean: 	
+	$(MAKE) -C $(GINDIR) clean
+
+# --- List of make targets -------------------------------------------------------------------------
+
+# list targets that do not create files (but not all makes understand .PHONY)
+.PHONY: all clean \
+    srccheck srcclean \
+    srcclean buildclean \
+	gin ginclean \
+	luajit luajitclean \
+	luarocks luarocksconf luarocksclean \
+	sqlite sqliteconf sqliteclean 
+
+# (end of Makefile)
+
 
 # --- libtom stuff ---------------------------------------------------------------------------------
 
@@ -151,77 +219,5 @@ lcrypt:
 lcryptclean:
 	rm -rf $(LUAMODULES)/lcrypt 
 
-# --- lzlib rock -----------------------------------------------------------------------------------
 
-lzlib: luarocks	
-	luarocks install lzlib
-	
-# --- lua-stdlib rock ------------------------------------------------------------------------------	
-
-luastdlib: luarocks luastdlibconf
-	cd $(LUAMODULES)/lua-stdlib && \
-	$(BUILDDIR)/bin/luarocks make rockspecs/stdlib-26-1.rockspec
-
-luastdlibconf:
-	cd $(LUAMODULES)/lua-stdlib && \
-	mkdir -p build-aux && \
-	mkdir -p rockspecs && \
-	sh -c "aclocal -I m4; automake --add-missing; autoconf; ./configure" && \
-	cp stdlib.rockspec rockspecs/stdlib-26-1.rockspec
-
-luastdlibclean:
-	cd $(LUAMODULES)/lua-stdlib && \
-	rm -r build-aux rockspecs Makefile configure
-
-# --- miniupnp and libnatpmp -----------------------------------------------------------------------
-miniupnp: miniupnpc
-
-libnatpmp:
-	cd $(SRCDIR)/libnatpmp && \
-	INSTALLPREFIX=$(BUILDDIR) make && \
-	INSTALLPREFIX=$(BUILDDIR) make install
-
-libnatpmpclean:
-	rm $(BUILDDIR)/include/natpmp.h $(BUILDDIR)/lib/libnatpmp.a $(BUILDDIR)/lib/libnatpmp.dylib $(BUILDDIR)/bin/natpmpc $(BUILDDIR)/lib/libnatpmp.1.dylib
-
-miniupnpc:
-	cd $(SRCDIR)/miniupnpc && \
-	INSTALLPREFIX=$(BUILDDIR) make && \
-	INSTALLPREFIX=$(BUILDDIR) make install
-
-miniupnpcclean:
-	rm -rf $(BUILDDIR)/include/miniupnpc $(BUILDDIR)/lib/libminiupnpc.* $(BUILDDIR)/bin/upnpc $(BUILDDIR)/bin/external-ip
-
-miniupnpclean: libnatpmpclean miniupnpcclean
-
-# --- Screws'n'Bolts
-luaportmapper:
-	cd $(SNBDIR) && \
-	gcc -Wall -shared -fPIC -o $(BUILDDIR)/lib/lua/5.1/luaportmapper.so \
-		-I$(BUILDDIR)/include/luajit-2.0 -I$(BUILDDIR)/include -I$(BUILDDIR)/include/miniupnpc \
-		-L$(BUILDDIR)/lib -lminiupnpc -lnatpmp -lluajit-5.1 luaportmapper.c
-
-testluaportmapper:
-	cd $(SNBDIR) && \
-	LD_LIBRARY_PATH=$(BUILDDIR)/lib:$(SNBDIR):$(LD_LIBRARY_PATH) $(BUILDDIR)/bin/lua $(SNBDIR)/test.luaportmapper.lua
-# --- Gin components -------------------------------------------------------------------------------
-gin: 
-	$(MAKE) -C $(GINDIR)
-
-ginclean: 	
-	$(MAKE) -C $(GINDIR) clean
-
-# --- List of make targets -------------------------------------------------------------------------
-
-# list targets that do not create files (but not all makes understand .PHONY)
-.PHONY: all clean \
-    srccheck srcclean \
-    srcclean buildclean \
-	gin ginclean \
-	luajit luajitclean \
-	luarocks luarocksconf luarocksclean \
-	sqlite sqliteconf sqliteclean \
-	lzlib lzlibclean 
-
-# (end of Makefile)
-
+# https://github.com/Neopallium/pluto
