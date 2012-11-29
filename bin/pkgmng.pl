@@ -26,14 +26,6 @@ my $pkgs   = [
   { name    => "libev", file => "libev-4.11.tar.gz",  dest => "libev",       
     get     => "curl -C - -O http://dist.schmorp.de/libev/libev-4.11.tar.gz",      
     extract => "tar zxvf $pkgdir/libev-4.11.tar.gz --strip-components 1" },
-  
-  # lib tom crypt
-  # { name    => "libtommath", file => "ltm-0.42.0.tar.bz2", dest => "libtommath",   
-  #   get     => "curl -C - -O http://libtom.org/files/ltm-0.42.0.tar.bz2",    
-  #	 extract => "bunzip2 -c $pkgdir/ltm-0.42.0.tar.bz2|tar xv --strip-components 1"},
-  # { name    => "libtomcrypt", file => "crypt-1.17.tar.bz2", dest => "libtomcrypt",  
-  #   get     => "curl -C - -O http://libtom.org/files/crypt-1.17.tar.bz2",    
-  #   extract => "bunzip2 -c $pkgdir/crypt-1.17.tar.bz2|tar xv --strip-components 1"},
 
   # upnp
   { name    => "upnpc", file => "miniupnpc-1.7.tar.gz", dest => "miniupnpc",       
@@ -42,14 +34,6 @@ my $pkgs   = [
   { name    => "libnatpmp", file => "libnatpmp-20120821.tar.gz", dest => "libnatpmp",       
     get     => "curl -C - -O http://miniupnp.free.fr/files/libnatpmp-20120821.tar.gz", 
     extract => "tar zxvf $pkgdir/libnatpmp-20120821.tar.gz --strip-components 1" },
-
-  # lua modules 
-   # { name    => "lua-stdlib", file => "lua-stdlib.zip", dest => "lua/modules/lua-stdlib",
-  #   get     => "curl -L -C - https://github.com/downloads/rrthomas/lua-stdlib/stdlib-26.zip -o lua-stdlib.zip",
-  #   extract => "unzip $pkgdir/lua-stdlib.zip; mv stdlib-26/* .; rmdir stdlib-26"},
-  # { name    => "nixio", file => "nixio.tar.gz", dest => "lua/modules/nixio",
-  #   get     => "curl -L -C - https://github.com/Neopallium/nixio/tarball/master -o nixio.tar.gz",
-  #  extract => "tar zxvf $pkgdir/nixio.tar.gz --strip-components 1"},
   
   # cryptography and stuff
   # { name    => "lcrypt", file => "lcrypt.tgz", dest => "lua/modules/lcrypt",
@@ -64,6 +48,14 @@ my $pkgs   = [
   # { name    => "lunit", file => "lunit-0.5.tar.gz",  dest => "lua/modules/lunit", 
   #   get     => "curl -C - -O http://www.nessie.de/mroth/lunit/lunit-0.5.tar.gz",
   #   extract => "tar zxvf $pkgdir/lunit-0.5.tar.gz --strip-components 1"},  
+  # lib tom crypt
+  # { name    => "libtommath", file => "ltm-0.42.0.tar.bz2", dest => "libtommath",   
+  #   get     => "curl -C - -O http://libtom.org/files/ltm-0.42.0.tar.bz2",    
+  #	 extract => "bunzip2 -c $pkgdir/ltm-0.42.0.tar.bz2|tar xv --strip-components 1"},
+  # { name    => "libtomcrypt", file => "crypt-1.17.tar.bz2", dest => "libtomcrypt",  
+  #   get     => "curl -C - -O http://libtom.org/files/crypt-1.17.tar.bz2",    
+  #   extract => "bunzip2 -c $pkgdir/crypt-1.17.tar.bz2|tar xv --strip-components 1"},
+
 ];
 
 
