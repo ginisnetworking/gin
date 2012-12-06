@@ -32,7 +32,7 @@ all: checksrc \
 	sqlite sqliterock \
 	libev libevrock \
 	nixio handlers \
-	lzlib \
+	lzlib sha2 \
 	libnatpmp miniupnp luaportmapper \
 	gin
 
@@ -85,11 +85,9 @@ zeromqclean:
 zeromqrock: luarocks zeromq
 	# get from here: https://github.com/Neopallium/lua-zmq
 	luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
-		"https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-scm-1.rockspec"
-	luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
-		"https://raw.github.com/Neopallium/lua-llthreads/master/rockspecs/lua-llthreads-scm-0.rockspec"
-    luarocks install ZEROMQ_DIR=$(BUILDDIR) ZEROMQ_INCDIR=$(BUILDDIR)/include/ \
-    	"https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-threads-scm-0.rockspec"	
+		"https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-scm-1.rockspec" && \
+	luarocks install "https://raw.github.com/Neopallium/lua-llthreads/master/rockspecs/lua-llthreads-scm-0.rockspec" && \
+    luarocks install "https://raw.github.com/Neopallium/lua-zmq/master/rockspecs/lua-zmq-threads-scm-0.rockspec"	
 			
 # --- Configure and compile sqlite -----------------------------------------------------------------
 
@@ -132,9 +130,12 @@ nixio: luarocks
 lzlib: luarocks	
 	luarocks install lzlib
 	
+sha2: luarocks
+	luarocks install sha2
+	
 handlers: luarocks
-	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-scm-0.rockspec"
-	luarocks install "https://github.com/Neopallium/lua-handlers/raw/master/lua-handler-zmq-scm-0.rockspec"	
+	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-scm-0.rockspec" && \
+	luarocks install "https://github.com/Neopallium/lua-handlers/raw/master/lua-handler-zmq-scm-0.rockspec"	 && \ 
 	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-nixio-scm-0.rockspec"
 	
 # --- miniupnp and libnatpmp -----------------------------------------------------------------------

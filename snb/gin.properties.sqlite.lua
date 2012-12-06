@@ -5,11 +5,14 @@ sqlite3 gin.properties.sqlite3
 SQLite version 3.7.12 2012-05-14 01:41:23
 Enter ".help" for instructions
 Enter SQL statements terminated with a ";"
-sqlite> CREATE TABLE properties (key varchar(255) primary key, value text);
-sqlite> select * from sqlite_master;
+sqlite> 
+
+CREATE TABLE properties (key varchar(255) primary key, value text);
+select * from sqlite_master;
+
 table|properties|properties|3|CREATE TABLE properties (key varchar(255) primary key, value text)
 index|sqlite_autoindex_properties_1|properties|4|
-sqlite> 
+sqlite> :
 ]]
 
 require('lsqlite3')
