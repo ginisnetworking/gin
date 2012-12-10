@@ -135,7 +135,7 @@ sha2: luarocks
 	
 handlers: luarocks
 	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-scm-0.rockspec" && \
-	luarocks install "https://github.com/Neopallium/lua-handlers/raw/master/lua-handler-zmq-scm-0.rockspec"	 && \ 
+	luarocks install "https://github.com/Neopallium/lua-handlers/raw/master/lua-handler-zmq-scm-0.rockspec" && \
 	luarocks install "https://raw.github.com/Neopallium/lua-handlers/master/lua-handler-nixio-scm-0.rockspec"
 	
 # --- miniupnp and libnatpmp -----------------------------------------------------------------------
