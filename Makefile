@@ -102,7 +102,7 @@ sqliteclean:
 	$(MAKE) -C $(SQLITEDIR) clean
 
 sqliterock: luarocks sqlite
-	luarocks install lsqlite3	
+	luarocks install lsqlite3 SQLITE_DIR=$(BUILDDIR)
 
 # --- Configure and compile libev  -----------------------------------------------------------------
 
